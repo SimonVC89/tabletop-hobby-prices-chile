@@ -2,7 +2,7 @@ name: Scrape and match board game prices
 
 on:
   schedule:
-    - cron: "0 9 * * *"  # 09:00 UTC = ~06:00 Chile (hora estandar)
+    - cron: "0 9 * * *"  # 09:00 UTC = 06:00 Chile en horario de verano (UTC-3, sep-abr) / 05:00 en horario estandar (UTC-4, abr-sep)
   workflow_dispatch: {}
 
 jobs:
