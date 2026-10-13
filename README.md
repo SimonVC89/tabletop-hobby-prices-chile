@@ -83,6 +83,12 @@ internos — no hay superficie pública adicional que proteger.
 - Delay de 1.5s entre requests a la misma tienda.
 - Las tiendas con protección activa anti-bot (Cloudflare, etc.) se excluyen
   deliberadamente en vez de intentar evadir la protección.
+- **UpDown y PlanetaLoz no corren en el cron automático**: ambas devuelven
+  403 Forbidden específicamente desde las IPs de los runners de GitHub
+  Actions (probablemente un bloqueo a tráfico de datacenter o fuera de
+  Chile), aunque funcionan sin problema corridas manualmente desde una red
+  residencial. Por la misma razón de arriba, no se intenta sortear ese
+  bloqueo — sus scripts de ingesta siguen disponibles para correr en local.
 - Uso estrictamente personal y no comercial.
 
 ## Licencia

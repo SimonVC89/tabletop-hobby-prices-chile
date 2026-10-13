@@ -25,9 +25,25 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Evita re-descargar el modelo de Hugging Face en cada corrida: sin
+      # esto, el runner golpea la API de HF desde una IP de datacenter
+      # compartida y puede recibir 429 (rate limit) en una VM limpia sin cache.
+      - name: Cache modelo de sentence-transformers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-cache-paraphrase-multilingual-MiniLM-L12-v2
+
       # Cada tienda es un step independiente con continue-on-error: si una
       # tienda cambia su HTML y su scraper falla, no debe tumbar a las
       # demas ni impedir que corra el matching con lo que si se pudo traer.
+      #
+      # UpDown y PlanetaLoz quedan fuera del cron: ambas devuelven 403
+      # Forbidden especificamente desde las IPs de los runners de GitHub
+      # (probablemente un bloqueo a trafico de datacenter/fuera de Chile),
+      # aunque funcionan sin problema corridas manualmente. No se intenta
+      # evadir ese bloqueo (ver "Scraping responsable" en el README); sus
+      # scripts de ingesta siguen disponibles para correr en local.
       - name: Scrape La Loseta
         id: laloseta
         continue-on-error: true
@@ -38,20 +54,10 @@ jobs:
         continue-on-error: true
         run: python -m src.ingest_dementegames
 
-      - name: Scrape UpDown
-        id: updown
-        continue-on-error: true
-        run: python -m src.ingest_updown
-
       - name: Scrape VuduGaming
         id: vudugaming
         continue-on-error: true
         run: python -m src.ingest_vudugaming
-
-      - name: Scrape PlanetaLoz
-        id: planetaloz
-        continue-on-error: true
-        run: python -m src.ingest_planetaloz
 
       - name: Scrape Griffin Games
         id: griffingames
@@ -101,9 +107,7 @@ jobs:
           for outcome in \
             "${{ steps.laloseta.outcome }}" \
             "${{ steps.dementegames.outcome }}" \
-            "${{ steps.updown.outcome }}" \
             "${{ steps.vudugaming.outcome }}" \
-            "${{ steps.planetaloz.outcome }}" \
             "${{ steps.griffingames.outcome }}" \
             "${{ steps.aldeajuegos.outcome }}" \
             "${{ steps.manahouse.outcome }}" \
