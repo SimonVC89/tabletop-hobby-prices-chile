@@ -12,6 +12,7 @@ import time
 from bs4 import BeautifulSoup
 
 from src.http import fetch_html
+from src.slug import title_from_slug
 
 REQUEST_DELAY_SECONDS = 1.5
 CATEGORY_URL = "https://www.aldeajuegos.cl/7-juegos-de-mesa"
@@ -40,8 +41,12 @@ def parse_products(html: str) -> list[dict]:
         if not digits:
             continue
 
+        title = title_tag.get_text(strip=True)
+        if title.endswith("..."):
+            title = title_from_slug(title_tag["href"])
+
         products.append({
-            "title": title_tag.get_text(strip=True),
+            "title": title,
             "url": title_tag["href"],
             "price_clp": int(digits),
             "in_stock": True,

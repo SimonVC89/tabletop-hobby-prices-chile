@@ -6,13 +6,13 @@ distinto: el precio viene como texto "$ 25.000" en vez de un atributo
 listado, asi que in_stock queda fijo en True por ahora.
 """
 
-import re
 import sys
 import time
 
 from bs4 import BeautifulSoup
 
 from src.http import fetch_html
+from src.slug import title_from_slug
 
 REQUEST_DELAY_SECONDS = 1.5
 CATEGORY_URL = "https://www.planetaloz.cl/14-juegos-de-mesa"
@@ -20,20 +20,6 @@ CATEGORY_URL = "https://www.planetaloz.cl/14-juegos-de-mesa"
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
-
-
-def title_from_slug(url: str) -> str:
-    """Reconstruye el nombre completo desde el slug de la URL.
-
-    PlanetaLoz trunca el nombre visible en la tarjeta de producto (ej.
-    "Terraforming Mars...") pero el slug de la URL conserva el nombre
-    completo, aunque sin tildes: ".../8646-terraforming-mars-automa-
-    expansion.html" -> "Terraforming Mars Automa Expansion".
-    """
-    slug = url.rstrip("/").rsplit("/", 1)[-1]
-    slug = slug.removesuffix(".html")
-    slug = re.sub(r"^\d+-+", "", slug)
-    return slug.replace("-", " ").strip().title()
 
 
 def fetch_page(url: str) -> str:

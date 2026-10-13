@@ -11,6 +11,7 @@ import time
 from bs4 import BeautifulSoup
 
 from src.http import fetch_html
+from src.slug import title_from_slug
 
 REQUEST_DELAY_SECONDS = 1.5
 CATEGORY_URL = "https://dementegames.cl/10-juegos-de-mesa"
@@ -38,8 +39,12 @@ def parse_products(html: str) -> list[dict]:
 
         in_stock = bool(availability_tag) and "InStock" in availability_tag.get("href", "")
 
+        title = title_tag.get_text(strip=True)
+        if title.endswith("..."):
+            title = title_from_slug(title_tag["href"])
+
         products.append({
-            "title": title_tag.get_text(strip=True),
+            "title": title,
             "url": title_tag["href"],
             "price_clp": int(price_tag["content"]),
             "in_stock": in_stock,
