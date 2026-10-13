@@ -58,8 +58,10 @@ internos — no hay superficie pública adicional que proteger.
 - Pipeline de matching: clave determinística (`match_key`) como mecanismo
   principal, embeddings (Hugging Face / sentence-transformers) como capa
   secundaria de revisión.
-- ~11.600 listings scrapeados, ~2.300 productos comparables entre 2 o más
+- ~11.700 listings scrapeados, ~2.350 productos comparables entre 2 o más
   tiendas.
+- Cron diario corriendo en GitHub Actions para 9 de las 11 tiendas (UpDown
+  y PlanetaLoz quedan solo para corrida manual, ver "Scraping responsable").
 - Alcance actual: solo juegos de mesa modernos. El soporte para Magic: The
   Gathering (singles y producto sellado) está diseñado en el esquema pero
   pausado por ahora.
@@ -70,11 +72,14 @@ internos — no hay superficie pública adicional que proteger.
 - [ ] Tests (`pytest` para el scraper/matching, JUnit para el backend)
 - [ ] Logging estructurado (reemplazar `print()`)
 - [ ] Validación de datos con Pydantic en el scraper
-- [ ] Reintentos con backoff exponencial en requests HTTP
-- [ ] CI/CD con GitHub Actions, separado por carpeta (`scraper/`, `backend/`, `frontend/`)
+- [x] Reintentos con backoff exponencial en requests HTTP
+- [x] CI/CD con GitHub Actions: cron diario de scraping + matching
+- [x] Vistas materializadas (`current_prices`, `product_price_stats`) con
+      precio de referencia por mediana entre tiendas, refrescadas en cada
+      corrida del cron
+- [ ] Alertas automáticas vía Telegram cuando una tienda cae bajo la mediana
+- [ ] CI/CD por carpeta para `backend/` y `frontend/` (tests/build en PRs)
 - [ ] Backend: API REST con DTOs, paginación, cache y documentación OpenAPI/Swagger
-- [ ] Vista materializada de "precio actual" para no recalcular en cada request
-- [ ] Precio de referencia por mediana móvil + alertas automáticas vía Telegram
 - [ ] Frontend con gráficos de precio histórico (Recharts)
 - [ ] Reactivar MTG (singles vía Scryfall, sellado vía matching propio)
 
