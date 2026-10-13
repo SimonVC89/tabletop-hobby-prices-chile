@@ -98,6 +98,9 @@ jobs:
       - name: Assign products
         run: python -m src.matching.assign_products
 
+      - name: Refresh price reference views
+        run: python -m src.refresh_price_views
+
       # Si alguna tienda fallo, el job completo se marca como fallido
       # (dispara el email de GitHub) aunque el resto si se haya procesado.
       - name: Check for store failures
