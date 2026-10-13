@@ -10,24 +10,20 @@ import re
 import sys
 import time
 
-import requests
 from bs4 import BeautifulSoup, NavigableString
+
+from src.http import fetch_html
 
 REQUEST_DELAY_SECONDS = 1.5
 CATEGORY_URL = "https://www.cafe2d6.cl/collections/all"
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-}
 
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
 
 
 def fetch_page(url: str) -> str:
-    response = requests.get(url, headers=HEADERS, timeout=15)
-    response.raise_for_status()
-    return response.text
+    return fetch_html(url)
 
 
 def first_price_text(price_tag) -> str:
