@@ -7,11 +7,20 @@ son el mismo producto (eso viene despues).
 
 from pgvector.psycopg2 import register_vector
 from sentence_transformers import SentenceTransformer
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.db import get_connection
 
 MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
 BATCH_SIZE = 256
+
+
+@retry(stop=stop_after_attempt(4), wait=wait_exponential(multiplier=2, min=5, max=60), reraise=True)
+def load_model() -> SentenceTransformer:
+    # Hugging Face rate-limita (429) seguido a las IPs compartidas de los
+    # runners de CI; unos reintentos con backoff suelen bastar si ya hay
+    # cache (ver el step "Cache del modelo" en el workflow).
+    return SentenceTransformer(MODEL_NAME)
 
 
 def fetch_listings_without_embedding(conn):
@@ -41,7 +50,7 @@ def main():
             return
 
         print(f"Cargando modelo '{MODEL_NAME}' (puede tardar la primera vez)...")
-        model = SentenceTransformer(MODEL_NAME)
+        model = load_model()
 
         listing_ids = [row[0] for row in rows]
         titles = [row[1] for row in rows]
