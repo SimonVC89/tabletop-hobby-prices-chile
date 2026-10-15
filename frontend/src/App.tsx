@@ -1,3 +1,4 @@
+import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 
 // Pagina provisoria: solo verifica que el tema (colores, fuentes, radios)
@@ -5,11 +6,7 @@ import { Button } from '@/components/ui/button'
 export default function App() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <img
-        src="/brand/thpc-horizontal-web.svg"
-        alt="Tabletop Hobby Prices Chile"
-        className="h-12 w-auto"
-      />
+      <Logo size="lg" />
 
       <h1 className="mt-10 text-3xl font-bold">Ofertas de hoy</h1>
       <p className="mt-2 max-w-prose text-muted-foreground">
