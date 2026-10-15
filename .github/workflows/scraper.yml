@@ -89,6 +89,21 @@ jobs:
         continue-on-error: true
         run: python -m src.ingest_wargaming
 
+      - name: Scrape Diverti
+        id: diverti
+        continue-on-error: true
+        run: python -m src.ingest_diverti
+
+      - name: Scrape Piedra Bruja
+        id: piedrabruja
+        continue-on-error: true
+        run: python -m src.ingest_piedrabruja
+
+      - name: Scrape Jugones
+        id: jugones
+        continue-on-error: true
+        run: python -m src.ingest_jugones
+
       - name: Compute match keys
         run: python -m src.matching.compute_keys
 
@@ -128,7 +143,10 @@ jobs:
             "${{ steps.manahouse.outcome }}" \
             "${{ steps.cafe2d6.outcome }}" \
             "${{ steps.elpatiogeek.outcome }}" \
-            "${{ steps.wargaming.outcome }}"; do
+            "${{ steps.wargaming.outcome }}" \
+            "${{ steps.diverti.outcome }}" \
+            "${{ steps.piedrabruja.outcome }}" \
+            "${{ steps.jugones.outcome }}"; do
             if [ "$outcome" != "success" ]; then
               echo "::warning::Un scraper de tienda fallo (outcome=$outcome)"
               failed=1
