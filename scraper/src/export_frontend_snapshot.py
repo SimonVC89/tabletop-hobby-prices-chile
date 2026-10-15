@@ -78,7 +78,7 @@ def export_products(cur):
         from products p
         join best b on b.product_id = p.id
         left join product_price_stats pps on pps.product_id = p.id
-        where p.hidden_at is null
+        where p.hidden_at is null and p.category = 'board_game'
     """)
     return [
         {
@@ -107,7 +107,7 @@ def export_offers(cur):
         join product_listings pl on pl.id = cp.listing_id
         where pps.store_count >= %s and cp.in_stock
           and cp.price_clp < pps.median_price_clp
-          and p.hidden_at is null
+          and p.hidden_at is null and p.category = 'board_game'
     """, (MIN_STORES_FOR_MEDIAN,))
 
     offers = []

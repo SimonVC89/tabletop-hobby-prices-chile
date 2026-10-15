@@ -52,17 +52,22 @@ internos — no hay superficie pública adicional que proteger.
 
 - Esquema de datos completo: `stores`, `products`, `product_listings`,
   `price_history`, `price_alerts`, con soporte pgvector.
-- 10 scrapers de tiendas chilenas funcionando: La Loseta, DeMente Games,
+- 13 scrapers de tiendas chilenas funcionando: La Loseta, DeMente Games,
   UpDown, VuduGaming, Griffin Games, Aldea Juegos, Mana House, Café 2d6,
-  El Patio Geek, Wargaming. (PlanetaLoz fue parte del proyecto hasta
-  octubre de 2026, ver "Scraping responsable".)
+  El Patio Geek, Wargaming, Diverti, Piedra Bruja y Jugones. (PlanetaLoz
+  fue parte del proyecto hasta octubre de 2026, ver "Scraping responsable".)
+- Clasificación de productos: lo que las tiendas listan como "juegos de
+  mesa" pero no lo es (protectores, boosters de TCG, naipes, libros de rol,
+  puzzles) se clasifica aparte y queda fuera de ofertas, alertas y frontend.
+  Los complementos de un juego específico (expansiones, dados o insertos
+  propios) sí cuentan como juego de mesa.
 - Pipeline de matching: clave determinística (`match_key`) como mecanismo
   principal, embeddings (Hugging Face / sentence-transformers) como capa
   secundaria de revisión.
-- ~11.700 listings scrapeados, ~2.350 productos comparables entre 2 o más
-  tiendas. Cada producto tiene imagen y descripción corta, extraídas del
+- ~3.000 juegos de mesa comprables hoy, ~1.060 comparables en 2+ tiendas
+  (con stock) y ~570 con mediana confiable (3+ tiendas). Cada producto tiene imagen y descripción corta, extraídas del
   propio HTML scrapeado (sin depender de ninguna API externa).
-- Cron diario corriendo en GitHub Actions para 9 de las 10 tiendas (UpDown
+- Cron diario corriendo en GitHub Actions para 12 de las 13 tiendas (UpDown
   queda solo para corrida manual, ver "Scraping responsable").
 - Bot de Telegram funcionando (`/start`, `/stop`, `/dar_de_baja`, `/ayuda`):
   resumen diario de ofertas (destacadas 50%+ y regulares 20%+ bajo la

@@ -6,19 +6,23 @@ Por cada match_key distinto entre los listings sin product_id:
   mas largo del grupo, asumiendo que suele ser el mas descriptivo) y se
   vinculan los listings
 
-Solo trabaja sobre category='board_game' por ahora.
+Los productos nuevos nacen como 'board_game'; classify.py los
+recategoriza despues (accesorio, TCG, rol u otro) si corresponde.
 """
 
 from src.db import get_connection
 
-CATEGORY = "board_game"
+DEFAULT_CATEGORY = "board_game"
 
 
 def get_or_create_product(conn, match_key: str, listings: list[tuple]) -> str:
     with conn.cursor() as cur:
+        # Se busca por match_key sin filtrar categoria: el clasificador puede
+        # haber movido el producto a 'accessory'/'tcg'/etc., y filtrar aqui
+        # crearia un duplicado como 'board_game' en la siguiente corrida.
         cur.execute(
-            "select id from products where match_key = %s and category = %s",
-            (match_key, CATEGORY),
+            "select id from products where match_key = %s and category::text not like 'mtg_%%'",
+            (match_key,),
         )
         row = cur.fetchone()
         if row:
@@ -33,7 +37,7 @@ def get_or_create_product(conn, match_key: str, listings: list[tuple]) -> str:
             values (%s, %s, %s, %s, %s)
             returning id
             """,
-            (CATEGORY, best_title, match_key, best_image_url, best_description),
+            (DEFAULT_CATEGORY, best_title, match_key, best_image_url, best_description),
         )
         return cur.fetchone()[0]
 

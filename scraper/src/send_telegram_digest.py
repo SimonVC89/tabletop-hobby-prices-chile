@@ -36,6 +36,7 @@ def fetch_candidate_offers(conn) -> list[dict]:
             where pps.store_count >= %s
               and cp.in_stock
               and cp.price_clp < pps.median_price_clp
+              and p.category = 'board_game'
               and not exists (
                   select 1 from price_alerts pa
                   where pa.listing_id = cp.listing_id and pa.price_clp = cp.price_clp
