@@ -44,7 +44,18 @@ def parse_products(html: str) -> list[dict]:
         if title.endswith("..."):
             title = title_from_slug(title_tag["href"])
 
+        img_tag = item.find("img")
+        image_url = None
+        description = None
+        if img_tag:
+            image_url = img_tag.get("data-src") or img_tag.get("src")
+            if image_url and image_url.startswith("//"):
+                image_url = "https:" + image_url
+            description = img_tag.get("alt")
+
         products.append({
+            "image_url": image_url,
+            "description": description,
             "title": title,
             "url": title_tag["href"],
             "price_clp": price_clp,

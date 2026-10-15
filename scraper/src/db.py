@@ -37,16 +37,26 @@ def upsert_listing(conn, store_id: str, product: dict) -> str:
     with conn.cursor() as cur:
         cur.execute(
             """
-            insert into product_listings (store_id, raw_title, url, external_sku, last_seen_at)
-            values (%s, %s, %s, %s, now())
+            insert into product_listings
+                (store_id, raw_title, url, external_sku, image_url, description, last_seen_at)
+            values (%s, %s, %s, %s, %s, %s, now())
             on conflict (store_id, external_sku) do update set
                 raw_title = excluded.raw_title,
                 url = excluded.url,
+                image_url = excluded.image_url,
+                description = excluded.description,
                 last_seen_at = now(),
                 is_active = true
             returning id
             """,
-            (store_id, product["title"], product["url"], product["store_sku"]),
+            (
+                store_id,
+                product["title"],
+                product["url"],
+                product["store_sku"],
+                product.get("image_url"),
+                product.get("description"),
+            ),
         )
         return cur.fetchone()[0]
 

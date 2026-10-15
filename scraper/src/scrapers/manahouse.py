@@ -42,7 +42,18 @@ def parse_products(html: str) -> list[dict]:
         url = title_tag["href"]
         slug = url.rstrip("/").rsplit("/", 1)[-1]
 
+        img_tag = item.find("img")
+        image_url = None
+        description = None
+        if img_tag:
+            image_url = img_tag.get("data-src") or img_tag.get("src")
+            if image_url and image_url.startswith("//"):
+                image_url = "https:" + image_url
+            description = img_tag.get("alt")
+
         products.append({
+            "image_url": image_url,
+            "description": description,
             "title": title_tag.get_text(strip=True),
             "url": "https://manahouse.cl" + url,
             "price_clp": int(digits),

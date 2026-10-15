@@ -38,7 +38,18 @@ def parse_products(html: str) -> list[dict]:
         price_text = price_tag.get_text(strip=True)
         price_clp = int(price_text.replace("$", "").replace(".", ""))
 
+        img_tag = item.find("img")
+        image_url = None
+        description = None
+        if img_tag:
+            image_url = img_tag.get("data-src") or img_tag.get("src")
+            if image_url and image_url.startswith("//"):
+                image_url = "https:" + image_url
+            description = img_tag.get("alt")
+
         products.append({
+            "image_url": image_url,
+            "description": description,
             "title": title_tag.get_text(strip=True),
             "url": link_tag["href"] if link_tag else None,
             "price_clp": price_clp,

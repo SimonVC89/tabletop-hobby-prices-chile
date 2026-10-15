@@ -14,7 +14,7 @@ from src.db import get_connection
 CATEGORY = "board_game"
 
 
-def get_or_create_product(conn, match_key: str, sample_titles: list[str]) -> str:
+def get_or_create_product(conn, match_key: str, listings: list[tuple]) -> str:
     with conn.cursor() as cur:
         cur.execute(
             "select id from products where match_key = %s and category = %s",
@@ -24,14 +24,16 @@ def get_or_create_product(conn, match_key: str, sample_titles: list[str]) -> str
         if row:
             return row[0]
 
-        canonical_name = max(sample_titles, key=len)
+        # mismo listing (el de titulo mas largo/descriptivo) aporta el
+        # nombre canonico y tambien su imagen/descripcion
+        _, best_title, best_image_url, best_description = max(listings, key=lambda l: len(l[1]))
         cur.execute(
             """
-            insert into products (category, canonical_name, match_key)
-            values (%s, %s, %s)
+            insert into products (category, canonical_name, match_key, image_url, description)
+            values (%s, %s, %s, %s, %s)
             returning id
             """,
-            (CATEGORY, canonical_name, match_key),
+            (CATEGORY, best_title, match_key, best_image_url, best_description),
         )
         return cur.fetchone()[0]
 
@@ -41,24 +43,24 @@ def main():
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "select id, match_key, raw_title from product_listings where product_id is null"
+                "select id, match_key, raw_title, image_url, description "
+                "from product_listings where product_id is null"
             )
             rows = cur.fetchall()
 
         print(f"Listings sin product_id: {len(rows)}")
 
         groups: dict[str, list[tuple]] = {}
-        for listing_id, match_key, raw_title in rows:
-            groups.setdefault(match_key, []).append((listing_id, raw_title))
+        for listing_id, match_key, raw_title, image_url, description in rows:
+            groups.setdefault(match_key, []).append((listing_id, raw_title, image_url, description))
 
         print(f"Grupos (match_key) distintos: {len(groups)}")
 
         with conn.cursor() as cur:
             for match_key, listings in groups.items():
-                titles = [t for _, t in listings]
-                product_id = get_or_create_product(conn, match_key, titles)
+                product_id = get_or_create_product(conn, match_key, listings)
 
-                for listing_id, _ in listings:
+                for listing_id, *_ in listings:
                     cur.execute(
                         "update product_listings set product_id = %s where id = %s",
                         (product_id, listing_id),
