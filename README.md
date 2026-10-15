@@ -59,9 +59,16 @@ internos — no hay superficie pública adicional que proteger.
   principal, embeddings (Hugging Face / sentence-transformers) como capa
   secundaria de revisión.
 - ~11.700 listings scrapeados, ~2.350 productos comparables entre 2 o más
-  tiendas.
+  tiendas. Cada producto tiene imagen y descripción corta, extraídas del
+  propio HTML scrapeado (sin depender de ninguna API externa).
 - Cron diario corriendo en GitHub Actions para 9 de las 11 tiendas (UpDown
   y PlanetaLoz quedan solo para corrida manual, ver "Scraping responsable").
+- Bot de Telegram funcionando (`/start`, `/stop`, `/dar_de_baja`, `/ayuda`):
+  resumen diario de ofertas (destacadas 50%+ y regulares 20%+ bajo la
+  mediana), con polling cada ~15 min vía GitHub Actions.
+- Política de retención de datos: `price_history` se poda a 8 meses, y un
+  producto sin ningún listing activo hace 6+ meses se oculta (soft-delete,
+  reversible si vuelve a aparecer).
 - Alcance actual: solo juegos de mesa modernos. El soporte para Magic: The
   Gathering (singles y producto sellado) está diseñado en el esquema pero
   pausado por ahora.
@@ -77,10 +84,15 @@ internos — no hay superficie pública adicional que proteger.
 - [x] Vistas materializadas (`current_prices`, `product_price_stats`) con
       precio de referencia por mediana entre tiendas, refrescadas en cada
       corrida del cron
-- [ ] Alertas automáticas vía Telegram cuando una tienda cae bajo la mediana
+- [x] Bot de Telegram con resumen diario de ofertas, suscripción abierta y
+      polling de comandos (sin servidor persistente, ver memoria del proyecto)
+- [x] Política de retención: poda de `price_history` (8 meses) y soft-delete
+      de productos descontinuados (6 meses sin listings activos)
 - [ ] CI/CD por carpeta para `backend/` y `frontend/` (tests/build en PRs)
 - [ ] Backend: API REST con DTOs, paginación, cache y documentación OpenAPI/Swagger
 - [ ] Frontend con gráficos de precio histórico (Recharts)
+- [ ] Sub-categorización de juegos de mesa (familiar/estrategia/party, etc.) —
+      cada tienda usa su propia taxonomía, sin estándar compartido entre ellas
 - [ ] Reactivar MTG (singles vía Scryfall, sellado vía matching propio)
 
 ## Scraping responsable

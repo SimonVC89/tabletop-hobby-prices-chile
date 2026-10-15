@@ -99,6 +99,15 @@ jobs:
       - name: Assign products
         run: python -m src.matching.assign_products
 
+      - name: Mark stale listings
+        run: python -m src.mark_stale_listings
+
+      - name: Hide discontinued products
+        run: python -m src.hide_discontinued_products
+
+      - name: Prune old price history
+        run: python -m src.prune_price_history
+
       - name: Refresh price reference views
         run: python -m src.refresh_price_views
 
