@@ -34,6 +34,11 @@ def upsert_store(conn, name: str, base_url: str) -> str:
 
 
 def upsert_listing(conn, store_id: str, product: dict) -> str:
+    # Un SKU vacio no choca con la restriccion UNIQUE (NULL <> NULL en
+    # Postgres) y duplicaria el listing en cada corrida: mejor fallar.
+    if not product.get("store_sku"):
+        raise ValueError(f"Listing sin store_sku, no se puede guardar: {product.get('url')}")
+
     with conn.cursor() as cur:
         cur.execute(
             """

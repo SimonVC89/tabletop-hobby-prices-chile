@@ -1,8 +1,9 @@
 """Scraper de prueba para UpDown (updown.cl).
 
 WooCommerce con tema Woodmart: mismo motor que La Loseta pero con clases
-de tema distintas. A diferencia de La Loseta, esta tienda expone un SKU
-real de negocio (data-product_sku) ademas del ID interno.
+de tema distintas. La identidad del listing es el ID interno de
+WooCommerce (ver woocommerce.post_id), no el SKU de negocio del boton de
+compra, que no existe en los productos agotados.
 """
 
 import sys
@@ -11,6 +12,7 @@ import time
 from bs4 import BeautifulSoup
 
 from src.http import fetch_html
+from src.scrapers.woocommerce import post_id
 
 REQUEST_DELAY_SECONDS = 1.5
 CATEGORY_URL = "https://www.updown.cl/categoria-producto/juegos-de-mesa/"
@@ -31,17 +33,12 @@ def parse_products(html: str) -> list[dict]:
     for item in soup.select("div.product-grid-item.product"):
         title_tag = item.select_one(".wd-entities-title a")
         price_tag = item.select_one(".price .woocommerce-Price-amount")
-        add_to_cart_tag = item.select_one(".add_to_cart_button")
 
         if not title_tag or not price_tag:
             continue
 
         price_text = price_tag.get_text(strip=True)
         price_clp = int(price_text.replace("$", "").replace(".", ""))
-
-        sku = None
-        if add_to_cart_tag:
-            sku = add_to_cart_tag.get("data-product_sku") or add_to_cart_tag.get("data-product_id")
 
         img_tag = item.find("img")
         image_url = None
@@ -59,7 +56,7 @@ def parse_products(html: str) -> list[dict]:
             "url": title_tag["href"],
             "price_clp": price_clp,
             "in_stock": "instock" in item.get("class", []),
-            "store_sku": sku,
+            "store_sku": post_id(item),
         })
 
     return products

@@ -9,6 +9,7 @@ import time
 from bs4 import BeautifulSoup
 
 from src.http import fetch_html
+from src.scrapers.woocommerce import post_id
 
 REQUEST_DELAY_SECONDS = 1.5
 CATEGORY_URL = "https://www.griffingames.cl/categoria-producto/juegos-de-mesa/"
@@ -30,7 +31,6 @@ def parse_products(html: str) -> list[dict]:
         title_tag = item.select_one(".woocommerce-loop-product__title")
         link_tag = item.select_one("a.woocommerce-loop-product__link")
         price_tag = item.select_one(".price .woocommerce-Price-amount")
-        add_to_cart_tag = item.select_one(".add_to_cart_button")
 
         if not title_tag or not price_tag:
             continue
@@ -54,7 +54,7 @@ def parse_products(html: str) -> list[dict]:
             "url": link_tag["href"] if link_tag else None,
             "price_clp": price_clp,
             "in_stock": "instock" in item.get("class", []),
-            "store_sku": add_to_cart_tag.get("data-product_id") if add_to_cart_tag else None,
+            "store_sku": post_id(item),
         })
 
     return products
