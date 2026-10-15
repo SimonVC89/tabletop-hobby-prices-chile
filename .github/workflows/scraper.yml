@@ -13,6 +13,7 @@ jobs:
         working-directory: scraper
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -100,6 +101,9 @@ jobs:
 
       - name: Refresh price reference views
         run: python -m src.refresh_price_views
+
+      - name: Send Telegram digest
+        run: python -m src.send_telegram_digest
 
       # Si alguna tienda fallo, el job completo se marca como fallido
       # (dispara el email de GitHub) aunque el resto si se haya procesado.
