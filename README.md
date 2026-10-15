@@ -52,17 +52,18 @@ internos — no hay superficie pública adicional que proteger.
 
 - Esquema de datos completo: `stores`, `products`, `product_listings`,
   `price_history`, `price_alerts`, con soporte pgvector.
-- 11 scrapers de tiendas chilenas funcionando: La Loseta, DeMente Games,
-  UpDown, VuduGaming, PlanetaLoz, Griffin Games, Aldea Juegos, Mana House,
-  Café 2d6, El Patio Geek, Wargaming.
+- 10 scrapers de tiendas chilenas funcionando: La Loseta, DeMente Games,
+  UpDown, VuduGaming, Griffin Games, Aldea Juegos, Mana House, Café 2d6,
+  El Patio Geek, Wargaming. (PlanetaLoz fue parte del proyecto hasta
+  octubre de 2026, ver "Scraping responsable".)
 - Pipeline de matching: clave determinística (`match_key`) como mecanismo
   principal, embeddings (Hugging Face / sentence-transformers) como capa
   secundaria de revisión.
 - ~11.700 listings scrapeados, ~2.350 productos comparables entre 2 o más
   tiendas. Cada producto tiene imagen y descripción corta, extraídas del
   propio HTML scrapeado (sin depender de ninguna API externa).
-- Cron diario corriendo en GitHub Actions para 9 de las 11 tiendas (UpDown
-  y PlanetaLoz quedan solo para corrida manual, ver "Scraping responsable").
+- Cron diario corriendo en GitHub Actions para 9 de las 10 tiendas (UpDown
+  queda solo para corrida manual, ver "Scraping responsable").
 - Bot de Telegram funcionando (`/start`, `/stop`, `/dar_de_baja`, `/ayuda`):
   resumen diario de ofertas (destacadas 50%+ y regulares 20%+ bajo la
   mediana), con polling cada ~15 min vía GitHub Actions.
@@ -100,20 +101,24 @@ internos — no hay superficie pública adicional que proteger.
 - Delay de 1.5s entre requests a la misma tienda.
 - Las tiendas con protección activa anti-bot (Cloudflare, etc.) se excluyen
   deliberadamente en vez de intentar evadir la protección.
-- **UpDown y PlanetaLoz no corren en el cron automático**: ambas devuelven
-  403 Forbidden específicamente desde las IPs de los runners de GitHub
-  Actions (probablemente un bloqueo a tráfico de datacenter o fuera de
-  Chile), aunque funcionan sin problema corridas manualmente desde una red
-  residencial. Por la misma razón de arriba, no se intenta sortear ese
-  bloqueo — sus scripts de ingesta siguen disponibles para correr en local.
-  **Efecto secundario conocido**: como la política de retención marca un
-  listing inactivo si no se ve en 3+ días, los precios de estas 2 tiendas
-  quedan afuera de la comparación poco después de cada corrida manual, y
-  un producto exclusivo de alguna de ellas podría ocultarse como
-  "descontinuado" a los 6 meses sin corrida — no porque el producto haya
-  desaparecido, sino por falta de monitoreo. Correrlas manualmente cada
-  tanto evita esto; se aceptó el riesgo en vez de agregar un umbral de
-  retención distinto por tienda.
+- **UpDown no corre en el cron automático**: devuelve 403 Forbidden
+  específicamente desde las IPs de los runners de GitHub Actions (bloqueo a
+  tráfico de datacenter), aunque funciona sin problema corrida manualmente
+  desde una red residencial. Por la misma razón de arriba, no se intenta
+  sortear ese bloqueo — su script de ingesta sigue disponible para correr
+  en local. **Efecto secundario conocido**: como la política de retención
+  marca un listing inactivo si no se ve en 3+ días, sus precios quedan
+  afuera de la comparación poco después de cada corrida manual, y un
+  producto exclusivo de UpDown podría ocultarse como "descontinuado" a los
+  6 meses sin corrida — no porque haya desaparecido, sino por falta de
+  monitoreo. Correrla manualmente cada tanto evita esto; se aceptó el
+  riesgo en vez de agregar un umbral de retención distinto por tienda.
+- **PlanetaLoz fue excluida (octubre de 2026)**: empezó a bloquear todo
+  acceso automatizado (403 incluso desde una conexión residencial, mientras
+  que un navegador normal entra sin problema). Se respetó el bloqueo: se
+  eliminó su scraper, la tienda quedó marcada inactiva y su historial de
+  precios hasta septiembre se conserva. Si la tienda lo autoriza, el código
+  sigue disponible en el historial de git.
 - Uso estrictamente personal y no comercial.
 
 ## Licencia

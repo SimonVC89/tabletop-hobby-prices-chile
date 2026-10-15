@@ -15,9 +15,16 @@ export interface Store {
   baseUrl: string
   /** Listings activos (vistos en el scraping de los ultimos dias). */
   activeListings: number
-  /** false para tiendas que solo se scrapean manualmente (UpDown, PlanetaLoz). */
-  inDailyCron: boolean
+  status: StoreStatus
 }
+
+/**
+ * - daily: se scrapea sola todos los dias (cron).
+ * - manual: bloquea las IPs de datacenter; solo se actualiza a mano.
+ * - excluded: bloquea el acceso automatizado; se respeto y se dejo de
+ *   scrapear (se conserva su historial).
+ */
+export type StoreStatus = 'daily' | 'manual' | 'excluded'
 
 /** Tarjeta de producto en catalogo, busqueda y "similares". */
 export interface ProductSummary {

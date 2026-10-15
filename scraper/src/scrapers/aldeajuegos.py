@@ -1,6 +1,6 @@
 """Scraper de prueba para Aldea Juegos (aldeajuegos.cl).
 
-PrestaShop, mismo patron general que dementegames.py / planetaloz.py,
+PrestaShop, mismo patron general que dementegames.py,
 pero el precio viene como texto "$ 47.588" (con espacio, sin atributo
 content limpio).
 """

@@ -18,7 +18,7 @@ from pgvector.psycopg2 import register_vector
 from src.db import get_connection
 
 OUT_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public" / "mock"
-MANUAL_ONLY_STORES = {"UpDown", "PlanetaLoz"}
+MANUAL_ONLY_STORES = {"UpDown"}
 MIN_STORES_FOR_MEDIAN = 3
 OFFER_THRESHOLD = 20
 DESTACADA_THRESHOLD = 50
@@ -39,18 +39,24 @@ def discount(best, median, store_count):
 
 def export_stores(cur):
     data = rows(cur, """
-        select s.id::text, s.name, s.base_url,
+        select s.id::text, s.name, s.base_url, s.active,
                count(pl.id) filter (where pl.is_active) as active_listings
         from stores s left join product_listings pl on pl.store_id = s.id
         group by s.id order by s.name
     """)
+
+    def status(store):
+        if not store["active"]:
+            return "excluded"
+        return "manual" if store["name"] in MANUAL_ONLY_STORES else "daily"
+
     return [
         {
             "id": s["id"],
             "name": s["name"],
             "baseUrl": s["base_url"],
             "activeListings": s["active_listings"],
-            "inDailyCron": s["name"] not in MANUAL_ONLY_STORES,
+            "status": status(s),
         }
         for s in data
     ]

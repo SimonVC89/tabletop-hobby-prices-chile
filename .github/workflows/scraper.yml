@@ -39,12 +39,11 @@ jobs:
       # tienda cambia su HTML y su scraper falla, no debe tumbar a las
       # demas ni impedir que corra el matching con lo que si se pudo traer.
       #
-      # UpDown y PlanetaLoz quedan fuera del cron: ambas devuelven 403
-      # Forbidden especificamente desde las IPs de los runners de GitHub
-      # (probablemente un bloqueo a trafico de datacenter/fuera de Chile),
-      # aunque funcionan sin problema corridas manualmente. No se intenta
-      # evadir ese bloqueo (ver "Scraping responsable" en el README); sus
-      # scripts de ingesta siguen disponibles para correr en local.
+      # UpDown queda fuera del cron: devuelve 403 Forbidden especificamente
+      # desde las IPs de los runners de GitHub (bloqueo a trafico de
+      # datacenter), aunque funciona sin problema corrida manualmente desde
+      # una conexion residencial. No se intenta evadir ese bloqueo (ver
+      # "Scraping responsable" en el README).
       - name: Scrape La Loseta
         id: laloseta
         continue-on-error: true

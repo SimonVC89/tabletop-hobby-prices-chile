@@ -1,6 +1,6 @@
 """Reconstruccion de nombres completos a partir del slug de una URL.
 
-Algunos temas de PrestaShop (PlanetaLoz, Aldea Juegos) truncan el nombre
+Algunos temas de PrestaShop (Aldea Juegos, DeMente Games) truncan el nombre
 visible en la tarjeta de producto con "..." cuando es muy largo, pero el
 slug de la URL conserva el nombre completo (sin tildes). Aldea Juegos
 ademas le agrega un codigo de barras al final del slug.
