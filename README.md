@@ -106,6 +106,14 @@ internos — no hay superficie pública adicional que proteger.
   Chile), aunque funcionan sin problema corridas manualmente desde una red
   residencial. Por la misma razón de arriba, no se intenta sortear ese
   bloqueo — sus scripts de ingesta siguen disponibles para correr en local.
+  **Efecto secundario conocido**: como la política de retención marca un
+  listing inactivo si no se ve en 3+ días, los precios de estas 2 tiendas
+  quedan afuera de la comparación poco después de cada corrida manual, y
+  un producto exclusivo de alguna de ellas podría ocultarse como
+  "descontinuado" a los 6 meses sin corrida — no porque el producto haya
+  desaparecido, sino por falta de monitoreo. Correrlas manualmente cada
+  tanto evita esto; se aceptó el riesgo en vez de agregar un umbral de
+  retención distinto por tienda.
 - Uso estrictamente personal y no comercial.
 
 ## Licencia
