@@ -1,0 +1,18 @@
+:root {
+  /* Tabletop Hobby Prices Chile · tema oscuro */
+  --bg: #1F1E1D;     /* Fondo · Fondo de la app · ~38% */
+  --surface: #292826; /* Superficie · Tarjetas, tablas, paneles · ~20% */
+  --surface-2: #33322F; /* Superficie alta · Inputs, menús, hover · ~8% */
+  --border: #45433F; /* Borde · Bordes y divisores · ~4% */
+  --text: #F1EEE7;   /* Texto · Títulos y texto principal · ~10% */
+  --text-muted: #A9A59B; /* Texto secundario · Metadatos, etiquetas, ejes · ~6% */
+  --primary: #5B9BD0; /* Mar · Acción primaria, enlaces, foco · ~5% */
+  --deal: #8FC163;   /* Pradera · Oferta real / precio bajo mercado · ~3.5% */
+  --price-up: #EA765B; /* Techo · Precio sube / alerta · ~2% */
+  --highlight: #DDB874; /* Ciudad · Destacados, insignias, 2ª serie · ~1.8% */
+  --chart-neutral: #7389A6; /* Cordillera · Series neutras de gráficos · ~1.2% */
+  --brand-blue: #0039A6; /* Meeple azul · Solo logo e ícono · ~0.25% */
+  --brand-red: #D52B1E; /* Meeple rojo · Solo logo e ícono · ~0.25% */
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace; /* precios y datos */
+}
