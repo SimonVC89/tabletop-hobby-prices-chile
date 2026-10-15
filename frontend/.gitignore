@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Snapshot de datos para desarrollo (se regenera con scraper: python -m src.export_frontend_snapshot)
+public/mock/

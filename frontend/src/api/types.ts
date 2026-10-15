@@ -1,0 +1,118 @@
+/*
+ * Contrato de la API REST. El frontend se construye contra estos tipos y
+ * el backend (Spring Boot) debe devolver exactamente esta forma.
+ *
+ * Convenciones:
+ * - JSON en camelCase (default de Jackson en Spring Boot).
+ * - Precios en pesos chilenos como enteros (CLP no usa decimales).
+ * - Fechas en ISO 8601: "2026-10-15" para dias, con hora para timestamps.
+ * - discountPct es positivo cuando el precio esta BAJO la mediana.
+ */
+
+export interface Store {
+  id: string
+  name: string
+  baseUrl: string
+  /** Listings activos (vistos en el scraping de los ultimos dias). */
+  activeListings: number
+  /** false para tiendas que solo se scrapean manualmente (UpDown, PlanetaLoz). */
+  inDailyCron: boolean
+}
+
+/** Tarjeta de producto en catalogo, busqueda y "similares". */
+export interface ProductSummary {
+  id: string
+  name: string
+  imageUrl: string | null
+  /** Tiendas con un listing activo y en stock. */
+  storeCount: number
+  bestPrice: number | null
+  bestStoreName: string | null
+  /** Mediana entre tiendas; null si no hay precios en stock. */
+  medianPrice: number | null
+  /**
+   * Descuento del mejor precio vs. la mediana. Solo se calcula con 3+
+   * tiendas (con menos, la mediana no es confiable); si no, null.
+   */
+  discountPct: number | null
+}
+
+export type OfferTier = 'destacada' | 'oferta'
+
+/** Una tienda vendiendo bajo la mediana (misma regla que el bot de Telegram). */
+export interface Offer {
+  productId: string
+  productName: string
+  imageUrl: string | null
+  storeName: string
+  /** Link directo al producto en la tienda. */
+  listingUrl: string
+  price: number
+  medianPrice: number
+  discountPct: number
+  storeCount: number
+  /** 'destacada' >= 50% bajo la mediana, 'oferta' >= 20%. */
+  tier: OfferTier
+}
+
+export interface ProductListing {
+  storeId: string
+  storeName: string
+  url: string
+  price: number
+  inStock: boolean
+  lastSeenAt: string
+}
+
+export interface PriceStats {
+  medianPrice: number
+  minPrice: number
+  maxPrice: number
+  storeCount: number
+}
+
+export interface ProductDetail {
+  id: string
+  name: string
+  imageUrl: string | null
+  description: string | null
+  /** Ordenados de menor a mayor precio. */
+  listings: ProductListing[]
+  stats: PriceStats | null
+}
+
+export interface PricePoint {
+  date: string
+  price: number
+}
+
+/** Una serie por tienda: el grafico permite mostrar/ocultar cada una. */
+export interface PriceHistorySeries {
+  storeId: string
+  storeName: string
+  points: PricePoint[]
+}
+
+export interface PriceHistory {
+  productId: string
+  series: PriceHistorySeries[]
+}
+
+export interface Page<T> {
+  items: T[]
+  page: number
+  pageSize: number
+  totalItems: number
+  totalPages: number
+}
+
+export type ProductSort = 'relevance' | 'discount' | 'price-asc' | 'price-desc' | 'stores'
+
+export interface ProductQuery {
+  q?: string
+  minDiscount?: number
+  minStores?: number
+  sort?: ProductSort
+  page?: number
+  pageSize?: number
+}
