@@ -20,27 +20,32 @@ def fetch_candidate_offers(conn) -> list[dict]:
     with conn.cursor() as cur:
         cur.execute(
             """
-            select
-              cp.listing_id,
-              p.canonical_name,
-              s.name as store_name,
-              pl.url,
-              cp.price_clp,
-              pps.median_price_clp,
-              round((100 * (pps.median_price_clp - cp.price_clp) / pps.median_price_clp)::numeric, 1) as discount_pct
-            from current_prices cp
-            join product_price_stats pps on pps.product_id = cp.product_id
-            join products p on p.id = cp.product_id
-            join stores s on s.id = cp.store_id
-            join product_listings pl on pl.id = cp.listing_id
-            where pps.store_count >= %s
-              and cp.in_stock
-              and cp.price_clp < pps.median_price_clp
-              and p.category = 'board_game'
-              and not exists (
-                  select 1 from price_alerts pa
-                  where pa.listing_id = cp.listing_id and pa.price_clp = cp.price_clp
-              )
+            -- Si una tienda publica el mismo juego en dos paginas, cuenta
+            -- una sola vez (la mas barata), antes de filtrar lo ya avisado.
+            select * from (
+              select distinct on (cp.product_id, cp.store_id)
+                cp.listing_id,
+                p.canonical_name,
+                s.name as store_name,
+                pl.url,
+                cp.price_clp,
+                pps.median_price_clp,
+                round((100 * (pps.median_price_clp - cp.price_clp) / pps.median_price_clp)::numeric, 1) as discount_pct
+              from current_prices cp
+              join product_price_stats pps on pps.product_id = cp.product_id
+              join products p on p.id = cp.product_id
+              join stores s on s.id = cp.store_id
+              join product_listings pl on pl.id = cp.listing_id
+              where pps.store_count >= %s
+                and cp.in_stock
+                and cp.price_clp < pps.median_price_clp
+                and p.category = 'board_game'
+              order by cp.product_id, cp.store_id, cp.price_clp
+            ) o
+            where not exists (
+                select 1 from price_alerts pa
+                where pa.listing_id = o.listing_id and pa.price_clp = o.price_clp
+            )
             order by discount_pct desc
             """,
             (MIN_STORE_COUNT,),

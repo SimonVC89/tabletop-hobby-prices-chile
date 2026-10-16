@@ -96,8 +96,11 @@ def export_products(cur):
 
 
 def export_offers(cur):
+    # Una oferta por tienda y juego: si la tienda lo publica en dos paginas,
+    # se queda la mas barata.
     data = rows(cur, """
-        select p.id::text as product_id, p.canonical_name, p.image_url,
+        select distinct on (cp.product_id, cp.store_id)
+               p.id::text as product_id, p.canonical_name, p.image_url,
                s.name as store_name, pl.url, cp.price_clp,
                round(pps.median_price_clp)::int as median_price, pps.store_count,
                pps.min_price_clp, pps.max_price_clp
@@ -109,6 +112,7 @@ def export_offers(cur):
         where pps.store_count >= %s and cp.in_stock
           and cp.price_clp < pps.median_price_clp
           and p.hidden_at is null and p.category = 'board_game'
+        order by cp.product_id, cp.store_id, cp.price_clp
     """, (MIN_STORES_FOR_MEDIAN,))
 
     offers = []
@@ -143,14 +147,18 @@ def export_details(cur, product_ids):
         where p.id::text = any(%s)
     """, (product_ids,))}
 
+    # Un listing por tienda (el mas barato con stock), igual que la mediana:
+    # algunas tiendas publican el mismo juego en dos paginas.
     listings = defaultdict(list)
     for l in rows(cur, """
-        select cp.product_id::text, s.id::text as store_id, s.name as store_name,
+        select distinct on (cp.product_id, cp.store_id)
+               cp.product_id::text, s.id::text as store_id, s.name as store_name,
                pl.url, cp.price_clp, cp.in_stock, pl.last_seen_at
         from current_prices cp
         join stores s on s.id = cp.store_id
         join product_listings pl on pl.id = cp.listing_id
         where cp.product_id::text = any(%s)
+        order by cp.product_id, cp.store_id, cp.in_stock desc, cp.price_clp
     """, (product_ids,)):
         listings[l["product_id"]].append({
             "storeId": l["store_id"],
@@ -161,21 +169,22 @@ def export_details(cur, product_ids):
             "lastSeenAt": l["last_seen_at"].isoformat(),
         })
 
-    # Un punto por tienda y dia (el ultimo precio visto ese dia).
+    # Un punto por tienda y dia: el precio mas bajo con stock de ese dia
+    # (si la tienda tiene el juego en dos paginas, cuenta la mas barata).
     history = defaultdict(lambda: defaultdict(dict))
     store_names = {}
     for h in rows(cur, """
         select distinct on (pl.product_id, pl.store_id, ph.scraped_at::date)
                pl.product_id::text, s.id::text as store_id, s.name as store_name,
-               ph.scraped_at::date as day, ph.price_clp
+               ph.scraped_at::date as day, ph.price_clp, ph.in_stock
         from price_history ph
         join product_listings pl on pl.id = ph.listing_id
         join stores s on s.id = pl.store_id
         where pl.product_id::text = any(%s)
-        order by pl.product_id, pl.store_id, ph.scraped_at::date, ph.scraped_at desc
+        order by pl.product_id, pl.store_id, ph.scraped_at::date, ph.in_stock desc, ph.price_clp
     """, (product_ids,)):
         store_names[h["store_id"]] = h["store_name"]
-        history[h["product_id"]][h["store_id"]][h["day"].isoformat()] = h["price_clp"]
+        history[h["product_id"]][h["store_id"]][h["day"].isoformat()] = (h["price_clp"], h["in_stock"])
 
     details = {}
     for pid in product_ids:
@@ -194,7 +203,10 @@ def export_details(cur, product_ids):
             {
                 "storeId": sid,
                 "storeName": store_names[sid],
-                "points": [{"date": d, "price": v} for d, v in sorted(days.items())],
+                "points": [
+                    {"date": d, "price": price, "inStock": in_stock}
+                    for d, (price, in_stock) in sorted(days.items())
+                ],
             }
             for sid, days in history[pid].items()
         ]
