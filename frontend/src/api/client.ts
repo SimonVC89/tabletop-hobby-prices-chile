@@ -69,22 +69,46 @@ interface MockProductFile {
 const normalize = (s: string) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-function sortProducts(items: ProductSummary[], sort: ProductQuery['sort']) {
+/**
+ * Que tan bien calza un nombre con la busqueda: nombre exacto, luego que
+ * empiece igual, luego palabras que empiecen con cada termino. A igualdad,
+ * nombres mas cortos primero (el juego base antes que sus expansiones).
+ */
+function relevance(name: string, query: string, terms: string[]) {
+  const n = normalize(name)
+  const words = n.split(/[^a-z0-9]+/)
+  let score = 0
+  if (n === query) score += 100
+  else if (n.startsWith(query)) score += 50
+  for (const t of terms) if (words.some((w) => w.startsWith(t))) score += 10
+  return score - n.length / 100
+}
+
+function sortProducts(items: ProductSummary[], sort: ProductQuery['sort'], q: string) {
   const byPrice = (p: ProductSummary) => p.bestPrice ?? Number.POSITIVE_INFINITY
-  const sorted = [...items]
-  switch (sort) {
-    case 'discount':
-      return sorted.sort((a, b) => (b.discountPct ?? -1) - (a.discountPct ?? -1))
-    case 'price-asc':
-      return sorted.sort((a, b) => byPrice(a) - byPrice(b))
-    case 'price-desc':
-      return sorted.sort((a, b) => byPrice(b) - byPrice(a))
-    case 'stores':
-    case 'relevance':
-    default:
-      // Sin busqueda de texto, "relevancia" = los mas comparables primero.
-      return sorted.sort((a, b) => b.storeCount - a.storeCount || a.name.localeCompare(b.name))
-  }
+  const query = normalize(q).trim()
+  const terms = query.split(/\s+/).filter(Boolean)
+  const scores = new Map(query ? items.map((p) => [p.id, relevance(p.name, query, terms)]) : [])
+
+  const compare: (a: ProductSummary, b: ProductSummary) => number = (() => {
+    switch (sort) {
+      case 'discount':
+        return (a, b) => (b.discountPct ?? -1) - (a.discountPct ?? -1)
+      case 'price-asc':
+        return (a, b) => byPrice(a) - byPrice(b)
+      case 'price-desc':
+        return (a, b) => byPrice(b) - byPrice(a)
+      case 'stores':
+        return (a, b) => b.storeCount - a.storeCount
+      case 'relevance':
+      default:
+        // Sin texto, "relevancia" = los mas comparables primero.
+        return (a, b) => (scores.get(b.id) ?? 0) - (scores.get(a.id) ?? 0) || b.storeCount - a.storeCount
+    }
+  })()
+
+  const outOfStock = (p: ProductSummary) => (p.bestPrice === null ? 1 : 0)
+  return [...items].sort((a, b) => outOfStock(a) - outOfStock(b) || compare(a, b) || a.name.localeCompare(b.name))
 }
 
 function createMockApi(): Api {
@@ -103,7 +127,15 @@ function createMockApi(): Api {
     getOffers: () => getJson('/mock/offers.json'),
 
     async getProducts(query = {}) {
-      const { q, minDiscount, minStores, sort = 'relevance', page = 1, pageSize = 24 } = query
+      const {
+        q = '',
+        minDiscount,
+        minStores,
+        includeOutOfStock = true,
+        sort = 'relevance',
+        page = 1,
+        pageSize = 24,
+      } = query
       let items = await allProducts()
 
       if (q) {
@@ -115,8 +147,9 @@ function createMockApi(): Api {
       }
       if (minDiscount) items = items.filter((p) => (p.discountPct ?? 0) >= minDiscount)
       if (minStores) items = items.filter((p) => p.storeCount >= minStores)
+      if (!includeOutOfStock) items = items.filter((p) => p.bestPrice !== null)
 
-      items = sortProducts(items, sort)
+      items = sortProducts(items, sort, q)
       const totalItems = items.length
       const start = (page - 1) * pageSize
       return {

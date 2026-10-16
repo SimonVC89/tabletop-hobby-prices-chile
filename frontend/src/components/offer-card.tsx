@@ -1,19 +1,24 @@
 import { ArrowUpRight } from 'lucide-react'
+import { useRef } from 'react'
 import { Link } from 'react-router'
 import type { Offer } from '@/api/types'
+import { FullNameCaption } from '@/components/full-name-caption'
 import { PriceRangeBar } from '@/components/price-range-bar'
 import { ProductImage } from '@/components/product-image'
+import { useIsTruncated } from '@/hooks/use-is-truncated'
 import { formatCLP, formatPct } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 export function OfferCard({ offer }: { offer: Offer }) {
+  const nameRef = useRef<HTMLHeadingElement>(null)
+  const truncated = useIsTruncated(nameRef)
   const destacada = offer.tier === 'destacada'
   const productUrl = `/juego/${offer.productId}`
 
   return (
     <article
       className={cn(
-        'flex flex-col overflow-hidden rounded-lg border bg-card',
+        'group flex flex-col overflow-hidden rounded-lg border bg-card',
         destacada && 'border-highlight/40',
       )}
     >
@@ -34,11 +39,12 @@ export function OfferCard({ offer }: { offer: Offer }) {
             Destacada
           </span>
         )}
+        {truncated && <FullNameCaption name={offer.productName} className="px-4 text-base" />}
       </div>
 
       <div className="flex flex-1 flex-col p-4">
         <p className="text-sm text-muted-foreground">{offer.storeName}</p>
-        <h2 className="mt-1 line-clamp-2 text-base leading-snug font-semibold">
+        <h2 ref={nameRef} className="mt-1 line-clamp-2 text-base leading-snug font-semibold">
           <Link to={productUrl} className="rounded-sm hover:text-primary hover:underline underline-offset-4">
             {offer.productName}
           </Link>

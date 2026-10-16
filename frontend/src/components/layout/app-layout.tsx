@@ -6,7 +6,10 @@ import { useScrolled } from '@/hooks/use-scrolled'
 import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-const NAV = [{ to: '/', label: 'Ofertas' }]
+const NAV = [
+  { to: '/', label: 'Ofertas' },
+  { to: '/juegos', label: 'Buscar juegos' },
+]
 
 const REPO_URL = 'https://github.com/SimonVC89/tabletop-hobby-prices-chile'
 

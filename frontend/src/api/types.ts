@@ -42,6 +42,10 @@ export interface ProductSummary {
    * tiendas (con menos, la mediana no es confiable); si no, null.
    */
   discountPct: number | null
+  /** Solo si esta agotado en todas las tiendas: ultimo precio visto. */
+  lastPrice: number | null
+  /** Solo si esta agotado: cuando se vio ese ultimo precio (ISO 8601). */
+  lastSeenAt: string | null
 }
 
 export type OfferTier = 'destacada' | 'oferta'
@@ -132,10 +136,17 @@ export interface Page<T> {
 
 export type ProductSort = 'relevance' | 'discount' | 'price-asc' | 'price-desc' | 'stores'
 
+/**
+ * Busqueda del catalogo. Los juegos con stock van siempre antes que los
+ * agotados; dentro de cada grupo se aplica `sort`.
+ */
 export interface ProductQuery {
+  /** Texto libre; ignora tildes y mayusculas. */
   q?: string
   minDiscount?: number
   minStores?: number
+  /** Incluir juegos agotados en todas las tiendas (por defecto true). */
+  includeOutOfStock?: boolean
   sort?: ProductSort
   page?: number
   pageSize?: number

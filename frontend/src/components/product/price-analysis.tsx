@@ -67,11 +67,15 @@ export function PriceAnalysisPanel({ analysis, className }: { analysis: PriceAna
           </p>
         )}
         {verdict === 'sin-stock' && <p>Ninguna de las tiendas que seguimos lo tiene disponible hoy.</p>}
-        <p>
-          Basado en <strong className="font-medium text-foreground">{plural(historyDays, 'día', 'días')}</strong> de
-          precios.
-          {historyDays < SHORT_HISTORY_DAYS && ' El análisis mejora a medida que juntamos más historial.'}
-        </p>
+        {historyDays === 0 ? (
+          <p>Todavía no lo hemos visto con stock en las tiendas que seguimos.</p>
+        ) : (
+          <p>
+            Basado en <strong className="font-medium text-foreground">{plural(historyDays, 'día', 'días')}</strong> de
+            precios.
+            {historyDays < SHORT_HISTORY_DAYS && ' El análisis mejora a medida que juntamos más historial.'}
+          </p>
+        )}
       </div>
 
       <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 border-t pt-4 text-sm">

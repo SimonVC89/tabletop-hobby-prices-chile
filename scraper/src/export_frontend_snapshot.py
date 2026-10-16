@@ -63,6 +63,8 @@ def export_stores(cur):
 
 
 def export_products(cur):
+    # Todos los juegos visibles, tambien los agotados en todas las tiendas:
+    # de esos se informa el ultimo precio visto y cuando.
     data = rows(cur, """
         with best as (
             select distinct on (cp.product_id)
@@ -70,13 +72,21 @@ def export_products(cur):
             from current_prices cp join stores s on s.id = cp.store_id
             where cp.in_stock
             order by cp.product_id, cp.price_clp
+        ),
+        last_seen as (
+            select distinct on (pl.product_id)
+                   pl.product_id, ph.price_clp, ph.scraped_at
+            from price_history ph join product_listings pl on pl.id = ph.listing_id
+            order by pl.product_id, ph.scraped_at desc, ph.price_clp
         )
         select p.id::text, p.canonical_name, p.image_url,
                coalesce(pps.store_count, 0) as store_count,
                b.price_clp as best_price, b.store_name as best_store,
-               round(pps.median_price_clp)::int as median_price
+               round(pps.median_price_clp)::int as median_price,
+               ls.price_clp as last_price, ls.scraped_at as last_seen_at
         from products p
-        join best b on b.product_id = p.id
+        left join best b on b.product_id = p.id
+        left join last_seen ls on ls.product_id = p.id
         left join product_price_stats pps on pps.product_id = p.id
         where p.hidden_at is null and p.category = 'board_game'
     """)
@@ -90,6 +100,8 @@ def export_products(cur):
             "bestStoreName": p["best_store"],
             "medianPrice": p["median_price"],
             "discountPct": discount(p["best_price"], p["median_price"], p["store_count"]),
+            "lastPrice": p["last_price"] if p["best_price"] is None else None,
+            "lastSeenAt": p["last_seen_at"].isoformat() if p["best_price"] is None and p["last_seen_at"] else None,
         }
         for p in data
     ]
@@ -147,19 +159,28 @@ def export_details(cur, product_ids):
         where p.id::text = any(%s)
     """, (product_ids,))}
 
-    # Un listing por tienda (el mas barato con stock), igual que la mediana:
-    # algunas tiendas publican el mismo juego en dos paginas.
+    # Un listing por tienda: el activo mas barato con stock, igual que la
+    # mediana (algunas tiendas publican el mismo juego en dos paginas). Si la
+    # tienda ya no lo publica, su ultimo precio visto, marcado sin stock. Las
+    # tiendas excluidas no se listan (su link lleva a un sitio que no seguimos).
     listings = defaultdict(list)
     for l in rows(cur, """
-        select distinct on (cp.product_id, cp.store_id)
-               cp.product_id::text, s.id::text as store_id, s.name as store_name,
-               pl.url, cp.price_clp, cp.in_stock, pl.last_seen_at
-        from current_prices cp
-        join stores s on s.id = cp.store_id
-        join product_listings pl on pl.id = cp.listing_id
-        where cp.product_id::text = any(%s)
-        order by cp.product_id, cp.store_id, cp.in_stock desc, cp.price_clp
-    """, (product_ids,)):
+        with latest as (
+            select distinct on (ph.listing_id) ph.listing_id, ph.price_clp, ph.in_stock
+            from price_history ph join product_listings pl on pl.id = ph.listing_id
+            where pl.product_id::text = any(%s)
+            order by ph.listing_id, ph.scraped_at desc
+        )
+        select distinct on (pl.product_id, pl.store_id)
+               pl.product_id::text, s.id::text as store_id, s.name as store_name,
+               pl.url, l.price_clp, (l.in_stock and pl.is_active) as in_stock, pl.last_seen_at
+        from product_listings pl
+        join latest l on l.listing_id = pl.id
+        join stores s on s.id = pl.store_id
+        where pl.product_id::text = any(%s) and s.active
+        order by pl.product_id, pl.store_id, pl.is_active desc,
+                 (l.in_stock and pl.is_active) desc, l.price_clp
+    """, (product_ids, product_ids)):
         listings[l["product_id"]].append({
             "storeId": l["store_id"],
             "storeName": l["store_name"],
@@ -282,7 +303,8 @@ def main():
     for pid, d in details.items():
         write(OUT_DIR / "products" / f"{pid}.json", {**d, "similar": similar.get(pid, [])})
 
-    print(f"Tiendas: {len(stores)} | Productos: {len(products)} | "
+    in_stock = sum(1 for p in products if p["bestPrice"] is not None)
+    print(f"Tiendas: {len(stores)} | Productos: {len(products)} ({in_stock} con stock) | "
           f"Ofertas: {len(offers)} | Fichas con detalle: {len(details)}")
     print(f"Salida: {OUT_DIR}")
 

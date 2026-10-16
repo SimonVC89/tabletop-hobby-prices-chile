@@ -57,9 +57,20 @@ interface Props {
 export function PriceHistoryChart({ history, days, listings, className }: Props) {
   const { data: stores } = useStores()
   const [range, setRange] = useState<RangeKey>('todo')
+  // Si nunca lo vimos con stock no hay linea de mejor precio: se parte con
+  // las tiendas activadas para que se vea su precio publicado (punteado).
+  const neverInStock = !days.some((d) => d.best !== null)
   // storeId -> posicion en la paleta. Se asigna al activar y se mantiene
   // mientras siga activa: agregar o quitar otra tienda no la repinta.
-  const [active, setActive] = useState<Record<string, number>>({})
+  const [active, setActive] = useState<Record<string, number>>(() =>
+    neverInStock
+      ? Object.fromEntries(
+          storeOptions(history, listings, undefined)
+            .slice(0, MAX_STORES)
+            .map((o, i) => [o.storeId, i]),
+        )
+      : {},
+  )
   const [hoverDate, setHoverDate] = useState<string | null>(null)
   // Tienda resaltada al pasar sobre su linea o su boton: las demas se atenuan.
   const [hovered, setHovered] = useState<string | null>(null)
@@ -159,6 +170,13 @@ export function PriceHistoryChart({ history, days, listings, className }: Props)
           })}
         </div>
       </div>
+
+      {neverInStock && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          No lo hemos visto con stock en este período: las líneas punteadas son el precio que publicaban las tiendas
+          sin stock.
+        </p>
+      )}
 
       <div className="mt-4 h-60 sm:h-72">
         <ResponsiveContainer width="100%" height="100%">

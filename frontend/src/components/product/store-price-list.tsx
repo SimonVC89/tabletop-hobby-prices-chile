@@ -1,7 +1,11 @@
 import { ArrowUpRight } from 'lucide-react'
 import type { ProductListing } from '@/api/types'
-import { formatCLP } from '@/lib/format'
+import { formatCLP, formatShortDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
+
+// Un listing sin verse por mas de 3 dias pasa a inactivo: la tienda ya no lo publica.
+const STALE_MS = 3 * 24 * 60 * 60 * 1000
+const isStale = (iso: string) => Date.now() - Date.parse(iso) > STALE_MS
 
 /** Precio actual en cada tienda: primero las con stock, de menor a mayor. */
 export function StorePriceList({ listings, className }: { listings: ProductListing[]; className?: string }) {
@@ -18,7 +22,9 @@ export function StorePriceList({ listings, className }: { listings: ProductListi
               <p className={cn('truncate font-medium', !l.inStock && 'text-muted-foreground')}>{l.storeName}</p>
               <p className={cn('text-xs', isBest ? 'text-deal' : 'text-muted-foreground')}>
                 {!l.inStock
-                  ? 'Sin stock'
+                  ? isStale(l.lastSeenAt)
+                    ? `Sin stock · visto el ${formatShortDate(l.lastSeenAt)}`
+                    : 'Sin stock'
                   : isBest
                     ? 'Mejor precio'
                     : best && (
