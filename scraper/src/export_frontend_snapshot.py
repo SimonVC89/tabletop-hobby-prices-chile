@@ -99,7 +99,8 @@ def export_offers(cur):
     data = rows(cur, """
         select p.id::text as product_id, p.canonical_name, p.image_url,
                s.name as store_name, pl.url, cp.price_clp,
-               round(pps.median_price_clp)::int as median_price, pps.store_count
+               round(pps.median_price_clp)::int as median_price, pps.store_count,
+               pps.min_price_clp, pps.max_price_clp
         from current_prices cp
         join product_price_stats pps on pps.product_id = cp.product_id
         join products p on p.id = cp.product_id
@@ -123,6 +124,8 @@ def export_offers(cur):
             "listingUrl": o["url"],
             "price": o["price_clp"],
             "medianPrice": o["median_price"],
+            "minPrice": o["min_price_clp"],
+            "maxPrice": o["max_price_clp"],
             "discountPct": pct,
             "storeCount": o["store_count"],
             "tier": "destacada" if pct >= DESTACADA_THRESHOLD else "oferta",
@@ -247,6 +250,8 @@ def main():
     register_vector(conn)
     try:
         with conn.cursor() as cur:
+            cur.execute("select max(scraped_at) from price_history")
+            meta = {"lastUpdated": cur.fetchone()[0].isoformat()}
             stores = export_stores(cur)
             products = export_products(cur)
             offers = export_offers(cur)
@@ -258,6 +263,7 @@ def main():
     finally:
         conn.close()
 
+    write(OUT_DIR / "meta.json", meta)
     write(OUT_DIR / "stores.json", stores)
     write(OUT_DIR / "products.json", products)
     write(OUT_DIR / "offers.json", offers)

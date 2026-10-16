@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 // logo). Asi el texto se puede dimensionar legible, cosa que el SVG
 // horizontal no permite: ahi el texto es ~40% de la altura total.
 const sizes = {
-  sm: { gap: 'gap-3', mosaic: 'size-12', name: 'text-lg', country: 'mt-1.5 text-[0.65rem]' },
+  sm: { gap: 'gap-3', mosaic: 'size-10 sm:size-12', name: 'text-base sm:text-lg', country: 'mt-1.5 text-[0.65rem]' },
   lg: { gap: 'gap-7', mosaic: 'size-28', name: 'text-4xl', country: 'mt-3 text-sm' },
 }
 
@@ -25,7 +25,7 @@ export function Logo({
         className={cn('shrink-0', s.mosaic)}
       />
       <span className="flex flex-col leading-none">
-        <span className={cn('font-mono font-semibold tracking-tight text-foreground', s.name)}>
+        <span className={cn('font-mono font-semibold tracking-tight whitespace-nowrap text-foreground', s.name)}>
           Tabletop Hobby Prices
         </span>
         <span

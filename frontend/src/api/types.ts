@@ -56,10 +56,18 @@ export interface Offer {
   listingUrl: string
   price: number
   medianPrice: number
+  /** Rango de precios en stock entre todas las tiendas que lo venden. */
+  minPrice: number
+  maxPrice: number
   discountPct: number
   storeCount: number
   /** 'destacada' >= 50% bajo la mediana, 'oferta' >= 20%. */
   tier: OfferTier
+}
+
+export interface Meta {
+  /** Momento del ultimo scraping con datos (ISO 8601). */
+  lastUpdated: string
 }
 
 export interface ProductListing {

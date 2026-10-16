@@ -64,6 +64,7 @@
   --color-chart-neutral: var(--chart-neutral);
   --color-brand-blue: var(--brand-blue);
   --color-brand-red: var(--brand-red);
+  --color-tile: var(--tile);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -130,6 +131,11 @@
   /* Solo para logo e iconografia de marca, nunca en UI general */
   --brand-blue: #0039a6;
   --brand-red: #d52b1e;
+
+  /* Fondo calido claro para fotos de producto: la mayoria trae fondo
+     blanco, que sobre el tema oscuro encandila; asi se ven como cajas
+     sobre una mesa. */
+  --tile: #e8e3d9;
 
   --radius: 0.5rem;
 }

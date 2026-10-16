@@ -1,4 +1,5 @@
 import type {
+  Meta,
   Offer,
   Page,
   PriceHistory,
@@ -16,6 +17,7 @@ import type {
  * Las pantallas solo conocen `api`, asi que cambiar de una a otra no las toca.
  */
 export interface Api {
+  getMeta(): Promise<Meta>
   getStores(): Promise<Store[]>
   getProducts(query?: ProductQuery): Promise<Page<ProductSummary>>
   getOffers(): Promise<Offer[]>
@@ -44,6 +46,7 @@ function toSearchParams(query: ProductQuery): string {
 
 function createHttpApi(baseUrl: string): Api {
   return {
+    getMeta: () => getJson(`${baseUrl}/api/meta`),
     getStores: () => getJson(`${baseUrl}/api/stores`),
     getProducts: (query = {}) => getJson(`${baseUrl}/api/products${toSearchParams(query)}`),
     getOffers: () => getJson(`${baseUrl}/api/offers`),
@@ -93,6 +96,7 @@ function createMockApi(): Api {
   }
 
   return {
+    getMeta: () => getJson('/mock/meta.json'),
     getStores: () => getJson('/mock/stores.json'),
     getOffers: () => getJson('/mock/offers.json'),
 

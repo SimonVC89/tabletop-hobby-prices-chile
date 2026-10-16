@@ -6,6 +6,9 @@ import type { ProductQuery } from './types'
 // evita refetches innecesarios al navegar entre paginas.
 const DAY_DATA = { staleTime: 30 * 60 * 1000 }
 
+export const useMeta = () =>
+  useQuery({ queryKey: ['meta'], queryFn: api.getMeta, ...DAY_DATA })
+
 export const useStores = () =>
   useQuery({ queryKey: ['stores'], queryFn: api.getStores, ...DAY_DATA })
 
