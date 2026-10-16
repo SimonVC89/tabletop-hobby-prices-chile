@@ -113,6 +113,9 @@ jobs:
       - name: Assign products
         run: python -m src.matching.assign_products
 
+      - name: Choose display names
+        run: python -m src.matching.display_names
+
       - name: Classify products
         run: python -m src.matching.classify
 

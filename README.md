@@ -63,7 +63,9 @@ internos — no hay superficie pública adicional que proteger.
   propios) sí cuentan como juego de mesa.
 - Pipeline de matching: clave determinística (`match_key`) como mecanismo
   principal, embeddings (Hugging Face / sentence-transformers) como capa
-  secundaria de revisión.
+  secundaria (hoy alimentan "juegos similares"). El nombre visible de cada
+  producto se elige por votación entre tiendas (el título que más tiendas
+  escriben igual, limpio de sufijos como " - Español").
 - ~3.000 juegos de mesa comprables hoy, ~1.060 comparables en 2+ tiendas
   (con stock) y ~570 con mediana confiable (3+ tiendas). Cada producto tiene imagen y descripción corta, extraídas del
   propio HTML scrapeado (sin depender de ninguna API externa).

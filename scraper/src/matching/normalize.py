@@ -9,7 +9,12 @@ titulo no importe.
 import re
 import unicodedata
 
-NOISE_WORDS = {"español", "espanol", "ingles", "english"}
+# Palabras que las tiendas agregan al nombre sin que distingan el producto:
+# idioma ("Unmatched ... ESP" vs "... Español") y "Base" ("Catan" vs
+# "Catan Base"). El idioma se ignora a proposito: el producto agrupa
+# ediciones en distintos idiomas.
+NOISE_WORDS = {"español", "espanol", "ingles", "english", "esp", "base"}
+NOISE_PHRASES = re.compile(r"\bjuego de mesa\b")
 
 
 def strip_accents(text: str) -> str:
@@ -19,6 +24,7 @@ def strip_accents(text: str) -> str:
 
 def build_match_key(title: str) -> str:
     text = strip_accents(title).lower()
+    text = NOISE_PHRASES.sub(" ", text)
     text = re.sub(r"[^a-z0-9\s]", " ", text)
     words = [w for w in text.split() if w and w not in NOISE_WORDS]
     return " ".join(sorted(words))

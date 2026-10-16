@@ -82,16 +82,25 @@ def main():
     dry_run = "--dry-run" in sys.argv
     conn = get_connection()
     try:
+        # Se clasifica mirando los titulos de TODAS las tiendas del producto,
+        # no solo el nombre visible: ese viene limpio (sin "- Juego de mesa"),
+        # y esa frase es justamente una de las señales positivas.
         with conn.cursor() as cur:
             cur.execute(
-                "select id, canonical_name, category::text from products where category::text = any(%s)",
+                """
+                select p.id, p.canonical_name, p.category::text,
+                       string_agg(distinct pl.raw_title, ' | ')
+                from products p join product_listings pl on pl.product_id = p.id
+                where p.category::text = any(%s)
+                group by p.id
+                """,
                 (list(RECLASSIFIABLE),),
             )
             products = cur.fetchall()
 
-        changes = [(pid, name, old, classify(name)) for pid, name, old in products]
-        changes = [c for c in changes if c[2] != c[3]]
-        result = Counter(classify(name) for _, name, _ in products)
+        classified = [(pid, name, old, classify(titles)) for pid, name, old, titles in products]
+        changes = [c for c in classified if c[2] != c[3]]
+        result = Counter(c[3] for c in classified)
         print(f"Productos evaluados: {len(products)} | resultado: {dict(result)}")
         print(f"Cambios de categoria: {len(changes)}")
 
