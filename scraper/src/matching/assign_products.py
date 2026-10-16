@@ -1,6 +1,7 @@
 """Crea/vincula products a partir del match_key de cada listing.
 
 Por cada match_key distinto entre los listings sin product_id:
+- si la clave es alias de un producto (fusion de duplicados), van a ese
 - si ya existe un product con ese match_key, se vinculan los listings a el
 - si no existe, se crea un product nuevo (canonical_name = el raw_title
   mas largo del grupo, asumiendo que suele ser el mas descriptivo) y se
@@ -17,11 +18,21 @@ DEFAULT_CATEGORY = "board_game"
 
 def get_or_create_product(conn, match_key: str, listings: list[tuple]) -> str:
     with conn.cursor() as cur:
+        # Primero los alias: claves de productos que se fusionaron con otro
+        # (merge_duplicates). Asi "Catan Basico" de una tienda nueva cae en
+        # Catan y no revive el producto absorbido.
+        cur.execute("select product_id from product_aliases where match_key = %s", (match_key,))
+        row = cur.fetchone()
+        if row:
+            return row[0]
+
         # Se busca por match_key sin filtrar categoria: el clasificador puede
         # haber movido el producto a 'accessory'/'tcg'/etc., y filtrar aqui
         # crearia un duplicado como 'board_game' en la siguiente corrida.
+        # Los productos absorbidos por una fusion no cuentan.
         cur.execute(
-            "select id from products where match_key = %s and category::text not like 'mtg_%%'",
+            "select id from products where match_key = %s and merged_into is null "
+            "and category::text not like 'mtg_%%'",
             (match_key,),
         )
         row = cur.fetchone()
