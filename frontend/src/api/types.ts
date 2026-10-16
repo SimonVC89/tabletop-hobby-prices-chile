@@ -91,14 +91,23 @@ export interface ProductDetail {
   name: string
   imageUrl: string | null
   description: string | null
-  /** Ordenados de menor a mayor precio. */
+  /**
+   * Uno por tienda (si una tienda publica el juego en dos paginas, la mas
+   * barata con stock). Ordenados de menor a mayor precio.
+   */
   listings: ProductListing[]
   stats: PriceStats | null
 }
 
+/** Ultimo precio visto de una tienda en un dia. */
 export interface PricePoint {
   date: string
   price: number
+  /**
+   * Si tenia stock ese dia. El "mejor precio del dia" y la mediana del
+   * grafico solo consideran puntos con stock.
+   */
+  inStock: boolean
 }
 
 /** Una serie por tienda: el grafico permite mostrar/ocultar cada una. */

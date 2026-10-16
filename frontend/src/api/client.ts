@@ -32,6 +32,8 @@ async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url)
   if (res.status === 404) throw new NotFoundError(url)
   if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${url}`)
+  // En el mock, Vite responde index.html (200) a un archivo que no existe.
+  if (!res.headers.get('content-type')?.includes('json')) throw new NotFoundError(url)
   return res.json() as Promise<T>
 }
 

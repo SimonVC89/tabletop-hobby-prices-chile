@@ -1,4 +1,5 @@
 import { ArrowUpRight } from 'lucide-react'
+import { Link } from 'react-router'
 import type { Offer } from '@/api/types'
 import { PriceRangeBar } from '@/components/price-range-bar'
 import { ProductImage } from '@/components/product-image'
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils'
 
 export function OfferCard({ offer }: { offer: Offer }) {
   const destacada = offer.tier === 'destacada'
+  const productUrl = `/juego/${offer.productId}`
 
   return (
     <article
@@ -16,7 +18,14 @@ export function OfferCard({ offer }: { offer: Offer }) {
       )}
     >
       <div className="relative">
-        <ProductImage src={offer.imageUrl} alt={offer.productName} className="aspect-[4/3] rounded-none" />
+        {/* Duplica el link del titulo: fuera del orden de tabulacion y del arbol de accesibilidad. */}
+        <Link to={productUrl} tabIndex={-1} aria-hidden="true">
+          <ProductImage
+            src={offer.imageUrl}
+            alt=""
+            className="aspect-[4/3] rounded-none transition-opacity hover:opacity-90"
+          />
+        </Link>
         <span className="price absolute top-3 left-3 rounded-md bg-deal px-2 py-1 text-sm font-semibold text-background">
           −{formatPct(offer.discountPct)}
         </span>
@@ -29,7 +38,11 @@ export function OfferCard({ offer }: { offer: Offer }) {
 
       <div className="flex flex-1 flex-col p-4">
         <p className="text-sm text-muted-foreground">{offer.storeName}</p>
-        <h2 className="mt-1 line-clamp-2 text-base leading-snug font-semibold">{offer.productName}</h2>
+        <h2 className="mt-1 line-clamp-2 text-base leading-snug font-semibold">
+          <Link to={productUrl} className="rounded-sm hover:text-primary hover:underline underline-offset-4">
+            {offer.productName}
+          </Link>
+        </h2>
 
         <div className="mt-3 flex items-baseline gap-2">
           <span className="price text-2xl font-semibold">{formatCLP(offer.price)}</span>

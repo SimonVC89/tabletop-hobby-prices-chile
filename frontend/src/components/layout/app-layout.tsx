@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from 'react-router'
+import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
 import { usingMockData } from '@/api/client'
 import { useMeta } from '@/api/hooks'
 import { Logo } from '@/components/logo'
@@ -63,6 +63,8 @@ export function AppLayout() {
       </main>
 
       <SiteFooter />
+      {/* Pagina nueva parte arriba; al volver atras recupera donde estaba. */}
+      <ScrollRestoration />
     </div>
   )
 }
