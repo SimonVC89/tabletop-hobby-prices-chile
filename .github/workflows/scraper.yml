@@ -2,7 +2,12 @@ name: Scrape and match board game prices
 
 on:
   schedule:
-    - cron: "0 9 * * *"  # 09:00 UTC = 06:00 Chile en horario de verano (UTC-3, sep-abr) / 05:00 en horario estandar (UTC-4, abr-sep)
+    # 08:17 UTC = 05:17 Chile en horario de verano (UTC-3, sep-abr) / 04:17 en
+    # horario estandar (UTC-4, abr-sep). Captura los cambios de la jornada
+    # anterior y las ofertas programadas a medianoche. El minuto 17 es a
+    # proposito: GitHub atrasa mas los cron a la hora en punto (con "0 9"
+    # llegaban ~5 h tarde).
+    - cron: "17 8 * * *"
   workflow_dispatch: {}
 
 jobs:
