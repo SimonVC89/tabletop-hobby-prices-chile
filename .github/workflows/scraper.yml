@@ -74,7 +74,7 @@ jobs:
         continue-on-error: true
         run: python -m src.ingest_manahouse
 
-      - name: Scrape Cafe 2d6
+      - name: Scrape Café 2d6
         id: cafe2d6
         continue-on-error: true
         run: python -m src.ingest_cafe2d6

@@ -1,9 +1,9 @@
-"""Corre el scraper de Cafe 2d6 y persiste los resultados en Supabase."""
+"""Corre el scraper de Café 2d6 y persiste los resultados en Supabase."""
 
 from src.db import get_connection, insert_price_history, upsert_listing, upsert_store
 from src.scrapers.cafe2d6 import CATEGORY_URL, fetch_all_products
 
-STORE_NAME = "Cafe 2d6"
+STORE_NAME = "Café 2d6"
 STORE_BASE_URL = "https://www.cafe2d6.cl"
 
 

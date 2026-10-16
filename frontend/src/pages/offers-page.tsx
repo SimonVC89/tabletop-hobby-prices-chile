@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useOffers } from '@/api/hooks'
+import { useOffers, useStores } from '@/api/hooks'
 import type { Offer } from '@/api/types'
 import { OfferCard } from '@/components/offer-card'
 import { Button } from '@/components/ui/button'
@@ -30,10 +30,17 @@ export function OffersPage() {
     setParams(next, { replace: true })
   }
 
-  const stores = useMemo(
-    () => [...new Set((offers ?? []).map((o) => o.storeName))].sort((a, b) => a.localeCompare(b)),
-    [offers],
-  )
+  // Todas las tiendas rastreadas, no solo las que tienen ofertas hoy: asi se
+  // ve que una tienda se revisa aunque hoy no tenga ninguna (queda en 0).
+  const { data: allStores } = useStores()
+  const storeOptions = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const o of offers ?? []) counts.set(o.storeName, (counts.get(o.storeName) ?? 0) + 1)
+    return (allStores ?? [])
+      .filter((s) => s.status !== 'excluded')
+      .map((s) => ({ name: s.name, count: counts.get(s.name) ?? 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  }, [allStores, offers])
   const destacadasCount = offers?.filter((o) => o.tier === 'destacada').length ?? 0
 
   const visible = useMemo(
@@ -86,9 +93,11 @@ export function OffersPage() {
           className="h-10 rounded-lg border bg-background px-3 text-sm"
         >
           <option value="">Todas las tiendas</option>
-          {stores.map((s) => (
-            <option key={s} value={s}>
-              {s}
+          {storeOptions.map((s) => (
+            // La seleccionada no se deshabilita aunque quede en 0: si no, un
+            // link compartido de ayer mostraria el select en blanco.
+            <option key={s.name} value={s.name} disabled={s.count === 0 && s.name !== store}>
+              {s.name} ({s.count})
             </option>
           ))}
         </select>
