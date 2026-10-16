@@ -28,8 +28,8 @@ export interface MarketDay {
 const CARRY_DAYS = 3
 const DAY_MS = 24 * 60 * 60 * 1000
 
-const addDays = (iso: string, n: number) => new Date(Date.parse(iso) + n * DAY_MS).toISOString().slice(0, 10)
-const daysBetween = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / DAY_MS)
+export const addDays = (iso: string, n: number) => new Date(Date.parse(iso) + n * DAY_MS).toISOString().slice(0, 10)
+export const daysBetween = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / DAY_MS)
 
 export function median(values: number[]): number | null {
   if (values.length === 0) return null

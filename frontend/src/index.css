@@ -132,6 +132,20 @@
   --brand-blue: #0039a6;
   --brand-red: #d52b1e;
 
+  /* Lineas por tienda en el grafico de historial. Paleta categorica
+     validada (validate_palette.js, modo oscuro, superficie #292826):
+     separacion CVD >= 8.4 y vision normal >= 19.3 entre vecinos. El verde
+     (6) queda en 2.98:1 de contraste: por eso el grafico trae vista de
+     tabla. El orden importa: se asignan en este orden, nunca ciclando. */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
   /* Fondo calido claro para fotos de producto: la mayoria trae fondo
      blanco, que sobre el tema oscuro encandila; asi se ven como cajas
      sobre una mesa. */

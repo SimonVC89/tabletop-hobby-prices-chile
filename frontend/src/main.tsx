@@ -5,7 +5,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import { AppLayout } from '@/components/layout/app-layout'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { OffersPage } from '@/pages/offers-page'
-import { ProductPage } from '@/pages/product-page'
 import './index.css'
 
 const queryClient = new QueryClient()
@@ -15,7 +14,11 @@ const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { index: true, element: <OffersPage /> },
-      { path: 'juego/:id', element: <ProductPage /> },
+      // Carga diferida: el detalle trae Recharts (~110 KB gzip) y la portada no lo necesita.
+      {
+        path: 'juego/:id',
+        lazy: async () => ({ Component: (await import('@/pages/product-page')).ProductPage }),
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

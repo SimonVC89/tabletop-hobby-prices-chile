@@ -5,6 +5,7 @@ import { NotFoundError } from '@/api/client'
 import { usePriceHistory, useProduct } from '@/api/hooks'
 import type { ProductDetail } from '@/api/types'
 import { PriceAnalysisPanel } from '@/components/product/price-analysis'
+import { PriceHistoryChart } from '@/components/product/price-history-chart'
 import { StorePriceList } from '@/components/product/store-price-list'
 import { ProductImage } from '@/components/product-image'
 import { Button } from '@/components/ui/button'
@@ -80,16 +81,29 @@ export function ProductPage() {
         <h2 id="historial-titulo" className="text-xl font-bold">
           Historial de precios
         </h2>
-        <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          {/* El grafico va en la columna izquierda (siguiente pieza). */}
-          {analysis ? (
-            <PriceAnalysisPanel analysis={analysis} className="lg:col-start-2" />
-          ) : history.isError ? (
-            <p className="rounded-lg border p-5 text-sm text-muted-foreground lg:col-start-2">
+        {/* En celular el panel va primero (la conclusion antes del detalle);
+            en escritorio, el grafico a la izquierda y el panel al lado. */}
+        <div className="mt-4 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+          {history.isError ? (
+            <p className="rounded-lg border p-5 text-sm text-muted-foreground lg:col-span-2">
               No pudimos cargar el historial de precios.
             </p>
+          ) : analysis && history.data && days ? (
+            <>
+              <PriceAnalysisPanel analysis={analysis} className="lg:col-start-2 lg:row-start-1" />
+              <PriceHistoryChart
+                key={id}
+                history={history.data}
+                days={days}
+                listings={detail.listings}
+                className="lg:col-start-1 lg:row-start-1"
+              />
+            </>
           ) : (
-            <div className="h-80 animate-pulse rounded-lg border bg-card lg:col-start-2" />
+            <>
+              <div className="h-80 animate-pulse rounded-lg border bg-card lg:col-start-2 lg:row-start-1" />
+              <div className="h-96 animate-pulse rounded-lg border bg-card lg:col-start-1 lg:row-start-1" />
+            </>
           )}
         </div>
       </section>
