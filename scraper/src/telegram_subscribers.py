@@ -1,5 +1,14 @@
 """Operaciones de base de datos para suscriptores del bot de Telegram."""
 
+# El bot no tiene servidor: sus comandos se leen con un workflow programado de GitHub
+# Actions que en la practica corre cada ~3 h. Hay que decirlo desde el primer contacto
+# (ver tambien setup_bot_profile, que lo pone en la descripcion visible antes de /start).
+DELAY_NOTICE = (
+    "⏳ Aviso: este bot todavía no tiene servidor propio, así que lee tus comandos cada cierto "
+    "tiempo y puede tardar varias horas en responderte (a veces menos). Los avisos de ofertas y de "
+    "tus juegos no sufren esa demora: salen después de cada actualización de precios."
+)
+
 HELP_TEXT = (
     "Comandos disponibles:\n"
     "/start - suscribirte al resumen de ofertas (mañana y tarde, solo cuando hay ofertas nuevas)\n"
@@ -9,7 +18,7 @@ HELP_TEXT = (
     "/dar_de_baja - baja total y permanente de todo aviso (también borra tu lista). "
     "Para reactivar vas a necesitar visitar la página web (todavía no disponible).\n"
     "/ayuda - este mensaje\n\n"
-    "Las respuestas no son inmediatas: pueden tardar varias horas. Gracias por la paciencia."
+    f"{DELAY_NOTICE}"
 )
 
 
@@ -76,7 +85,8 @@ def handle_start(conn, chat_id: str) -> str:
     return (
         "Listo, quedaste suscrito al resumen de ofertas: te escribo en la mañana y en la tarde, "
         "solo cuando hay ofertas nuevas. También puedes seguir juegos puntuales con /seguir. "
-        "Usa /ayuda para ver más opciones."
+        "Usa /ayuda para ver más opciones.\n\n"
+        f"{DELAY_NOTICE}"
     )
 
 
