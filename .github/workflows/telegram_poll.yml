@@ -31,3 +31,10 @@ jobs:
 
       - name: Poll Telegram commands
         run: python -m src.poll_telegram_commands
+
+      # Aviso solo al mantenedor cuando una tienda de actualizacion manual
+      # (UpDown) esta por cumplir el plazo de 72 h. Va aparte del polling para
+      # que un fallo del bot no impida el aviso, y al reves.
+      - name: Alert about stale manual stores
+        if: always()
+        run: python -m src.alert_manual_stores

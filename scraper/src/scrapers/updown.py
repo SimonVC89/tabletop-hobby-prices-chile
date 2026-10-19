@@ -15,6 +15,10 @@ from src.http import fetch_html
 from src.scrapers.woocommerce import post_id
 
 REQUEST_DELAY_SECONDS = 1.5
+# Cada pagina del catalogo pesa ~600 KB y el sitio llega a tardar 40 s en
+# responder (corrida manual del 2026-10-18): con el timeout por defecto (15 s)
+# el scraper abortaba a mitad de camino y no guardaba nada.
+PAGE_TIMEOUT_SECONDS = 90
 CATEGORY_URL = "https://www.updown.cl/categoria-producto/juegos-de-mesa/"
 
 
@@ -23,7 +27,7 @@ if sys.stdout.encoding != "utf-8":
 
 
 def fetch_page(url: str) -> str:
-    return fetch_html(url)
+    return fetch_html(url, timeout=PAGE_TIMEOUT_SECONDS)
 
 
 def parse_products(html: str) -> list[dict]:
