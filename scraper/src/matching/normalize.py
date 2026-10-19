@@ -17,6 +17,25 @@ NOISE_WORDS = {"español", "espanol", "ingles", "english", "esp", "base"}
 NOISE_PHRASES = re.compile(r"\bjuego de mesa\b")
 
 
+# Formas distintas de escribir lo mismo (las usan el detector de duplicados y la
+# busqueda del bot). Los ordinales van a un token propio ("ord2") y no a "2":
+# "Machi Koro 2da Edicion" y "Machi Koro 2" son juegos distintos (el segundo es
+# una secuela).
+SYNONYMS = {
+    "primera": "ord1", "segunda": "ord2", "tercera": "ord3", "cuarta": "ord4",
+    "exp": "expansion", "ampliacion": "expansion",
+    "jug": "jugadores", "ed": "edicion",
+}
+# "2da", "2a", "3ra", "3era", "2o" (el º queda como "o" al quitar tildes) -> "ord2", "ord3".
+ORDINAL = re.compile(r"^(\d+)(?:da|ra|ta|na|ma|va|era|a|o)$")
+
+
+def canonical(word: str) -> str:
+    """Forma canonica de una palabra ya normalizada (sin tildes, en minusculas)."""
+    m = ORDINAL.match(word)
+    return f"ord{m.group(1)}" if m else SYNONYMS.get(word, word)
+
+
 def strip_accents(text: str) -> str:
     normalized = unicodedata.normalize("NFKD", text)
     return "".join(ch for ch in normalized if not unicodedata.combining(ch))

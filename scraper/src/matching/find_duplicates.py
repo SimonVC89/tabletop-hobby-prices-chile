@@ -36,6 +36,7 @@ import numpy as np
 from pgvector.psycopg2 import register_vector
 
 from src.db import get_connection
+from src.matching.normalize import canonical
 
 REPORT_PATH = Path(__file__).resolve().parents[2] / "duplicados_revision.md"
 DECISIONS_PATH = REPORT_PATH.with_suffix(".json")
@@ -71,23 +72,6 @@ REVIEWABLE_EXTRAS = {"avanzado", "experto", "principiante", "expansion", "amplia
 # mismo producto. En Arkham Horror LCG cada ciclo trae una expansion de
 # campana y otra de investigadores que solo difieren en esa palabra.
 EXCLUSIVE_MARKERS = [{"campana", "investigadores"}]
-
-
-# Formas distintas de escribir lo mismo. Se aplican antes de comparar.
-# Los ordinales van a un token propio ("ord2") y no a "2": "Machi Koro 2da
-# Edicion" y "Machi Koro 2" son juegos distintos (el segundo es una secuela).
-SYNONYMS = {
-    "primera": "ord1", "segunda": "ord2", "tercera": "ord3", "cuarta": "ord4",
-    "exp": "expansion", "ampliacion": "expansion",
-    "jug": "jugadores", "ed": "edicion",
-}
-# "2da", "2a", "3ra", "3era", "2o" (el º queda como "o" al quitar tildes) -> "ord2", "ord3".
-ORDINAL = re.compile(r"^(\d+)(?:da|ra|ta|na|ma|va|era|a|o)$")
-
-
-def canonical(word: str) -> str:
-    m = ORDINAL.match(word)
-    return f"ord{m.group(1)}" if m else SYNONYMS.get(word, word)
 
 
 def core_key(match_key: str) -> str:

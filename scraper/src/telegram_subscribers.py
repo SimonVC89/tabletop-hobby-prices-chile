@@ -2,12 +2,14 @@
 
 HELP_TEXT = (
     "Comandos disponibles:\n"
-    "/start - suscribirte al resumen diario de ofertas\n"
-    "/stop - darte de baja del resumen (podes volver a entrar con /start)\n"
-    "/dar_de_baja - baja total y permanente de todo aviso. "
-    "Para reactivar vas a necesitar visitar la pagina web (todavia no "
-    "disponible).\n"
-    "/ayuda - este mensaje"
+    "/start - suscribirte al resumen de ofertas (mañana y tarde, solo cuando hay ofertas nuevas)\n"
+    "/stop - pausar el resumen (puedes volver con /start). No afecta a los juegos que sigues\n"
+    "/seguir <juego> - avisarte cuando un juego baje de precio o vuelva a tener stock\n"
+    "/siguiendo - ver los juegos que sigues\n"
+    "/dar_de_baja - baja total y permanente de todo aviso (también borra tu lista). "
+    "Para reactivar vas a necesitar visitar la página web (todavía no disponible).\n"
+    "/ayuda - este mensaje\n\n"
+    "Las respuestas pueden tardar hasta 15 minutos. Gracias por la paciencia."
 )
 
 
@@ -71,7 +73,11 @@ def handle_start(conn, chat_id: str) -> str:
             (chat_id,),
         )
 
-    return "Listo, quedaste suscrito al resumen diario de ofertas. Usa /ayuda para ver mas opciones."
+    return (
+        "Listo, quedaste suscrito al resumen de ofertas: te escribo en la mañana y en la tarde, "
+        "solo cuando hay ofertas nuevas. También puedes seguir juegos puntuales con /seguir. "
+        "Usa /ayuda para ver más opciones."
+    )
 
 
 def handle_stop(conn, chat_id: str) -> str:
@@ -84,7 +90,10 @@ def handle_stop(conn, chat_id: str) -> str:
             """,
             (chat_id,),
         )
-    return "Listo, te diste de baja del resumen diario. Podes volver a suscribirte cuando quieras con /start."
+    return (
+        "Listo, te diste de baja del resumen de ofertas. Puedes volver a suscribirte cuando quieras con /start. "
+        "Los juegos que sigues con /seguir se mantienen: usa /siguiendo para verlos."
+    )
 
 
 def handle_dar_de_baja(conn, chat_id: str) -> str:
@@ -100,20 +109,26 @@ def handle_dar_de_baja(conn, chat_id: str) -> str:
             """,
             (chat_id,),
         )
+        # Baja total: tambien deja de seguir todos los juegos (FR-T10).
+        cur.execute("delete from telegram_watchlist where chat_id = %s", (chat_id,))
     return (
-        "Listo, diste de baja total: no vas a recibir ningun aviso mas. "
+        "Listo, diste de baja total: no vas a recibir ningún aviso más y borré tu lista de juegos. "
         "Para volver a activarlo en el futuro vas a necesitar hacerlo desde "
-        "la pagina web."
+        "la página web."
     )
 
 
 def mark_blocked_by_user(conn, chat_id: str):
-    """El usuario bloqueo el bot en Telegram (sendMessage devolvio 403)."""
+    """El usuario bloqueo el bot en Telegram (sendMessage devolvio 403).
+
+    Se apaga el resumen y se borra su lista: si no, cada corrida seguiria
+    intentando avisarle de sus juegos y recibiendo el mismo 403."""
     with conn.cursor() as cur:
         cur.execute(
             "update telegram_subscribers set is_active = false where chat_id = %s",
             (chat_id,),
         )
+        cur.execute("delete from telegram_watchlist where chat_id = %s", (chat_id,))
 
 
 def get_active_subscribers(conn) -> list[str]:

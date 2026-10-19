@@ -1,14 +1,20 @@
-"""Arma y manda el resumen diario de ofertas por Telegram (FR-T4/T8/T9).
+"""Arma y manda el resumen de ofertas por Telegram (FR-T4/T8/T9) y los avisos de
+los juegos que cada persona sigue (/seguir, ver telegram_watchlist).
 
-Se corre al final del cron diario, despues de refresh_price_views. Si no
-hay ninguna oferta nueva que calificar, no manda nada (ni a los
-suscriptores ni se marca nada en price_alerts).
+Se corre al final de cada corrida del cron (manana y tarde), despues de
+refresh_price_views. Cada chat recibe como maximo un mensaje por corrida, con la
+seccion "De tu lista" arriba y el resumen de ofertas despues (si esta suscrito).
+Si no hay nada nuevo que contar, no manda nada: ni se marca nada en price_alerts.
 """
+
+from collections import defaultdict
 
 from src.db import get_connection
 from src.telegram import send_message
 from src.telegram_subscribers import get_active_subscribers, mark_blocked_by_user
+from src.telegram_watchlist import collect_alerts, format_watch_section, save_state
 
+TELEGRAM_MESSAGE_LIMIT = 4096
 MIN_STORE_COUNT = 3
 DESTACADA_THRESHOLD = 50
 OFERTA_THRESHOLD = 20
@@ -63,9 +69,12 @@ def format_section(title: str, offers: list[dict], top_n: int) -> str:
 
     lines = [title]
     for i, o in enumerate(shown, start=1):
+        # Solo el separador de miles del precio: reemplazar comas en toda la linea
+        # rompia la coma de "off, Tienda" y cualquier coma del nombre o del enlace.
+        price = f"{o['price_clp']:,}".replace(",", ".")
         lines.append(
-            f"{i}. {o['canonical_name']} - ${o['price_clp']:,} ({o['discount_pct']}% off, {o['store_name']})\n"
-            f"   {o['url']}".replace(",", ".")
+            f"{i}. {o['canonical_name']} - ${price} ({o['discount_pct']}% off, {o['store_name']})\n"
+            f"   {o['url']}"
         )
 
     if remaining > 0:
@@ -90,6 +99,16 @@ def build_digest_text(offers: list[dict]) -> str | None:
     return "\n\n".join(sections)
 
 
+def period_greeting(conn) -> str:
+    """Encabezado segun la hora de Chile: el resumen sale tras la corrida de la
+    manana o la de la tarde. La hora la da Postgres para no depender de tzdata
+    (que no viene con Python en Windows)."""
+    with conn.cursor() as cur:
+        cur.execute("select extract(hour from now() at time zone 'America/Santiago')")
+        hour = int(cur.fetchone()[0])
+    return "☀️ Resumen de esta mañana" if hour < 15 else "🌆 Resumen de esta tarde"
+
+
 def mark_offers_as_notified(conn, offers: list[dict]):
     with conn.cursor() as cur:
         for o in offers:
@@ -102,28 +121,64 @@ def mark_offers_as_notified(conn, offers: list[dict]):
             )
 
 
+def send_parts(chat_id: str, greeting: str, parts: list[str]) -> dict:
+    """Manda las secciones juntas en un mensaje; si no caben en el limite de Telegram,
+    una por mensaje (con el saludo solo en el primero). Si alguna falla, devuelve ese error.
+
+    Sin esto, un mensaje de mas de 4096 caracteres fallaria en silencio y se repetiria
+    el mismo fallo en cada corrida.
+    """
+    text = f"{greeting}\n\n" + "\n\n".join(parts)
+    messages = [text] if len(text) <= TELEGRAM_MESSAGE_LIMIT else [
+        f"{greeting}\n\n{part}" if i == 0 else part for i, part in enumerate(parts)
+    ]
+    for message in messages:
+        result = send_message(chat_id, message)
+        if not result.get("ok"):
+            return result
+    return {"ok": True}
+
+
 def main():
     conn = get_connection()
     try:
         offers = fetch_candidate_offers(conn)
         qualifying = [o for o in offers if o["discount_pct"] >= OFERTA_THRESHOLD]
+        digest_body = build_digest_text(qualifying) if qualifying else None
+        digest_subscribers = set(get_active_subscribers(conn)) if digest_body else set()
 
-        if not qualifying:
-            print("Sin ofertas nuevas que calificar, no se manda nada.")
+        # Juegos seguidos con /seguir. Lo que se agoto no avisa: se guarda de inmediato.
+        # Los avisos guardan su estado nuevo solo si el mensaje salio bien.
+        watch_alerts, silent_changes = collect_alerts(conn)
+        save_state(conn, silent_changes, alerted=False)
+        alerts_by_chat = defaultdict(list)
+        for alert in watch_alerts:
+            alerts_by_chat[alert["chat_id"]].append(alert)
+
+        recipients = sorted(digest_subscribers | set(alerts_by_chat))
+        if not recipients:
+            conn.commit()
+            if qualifying:
+                print(f"{len(qualifying)} ofertas calificaron, pero no hay suscriptores activos. No se marca nada.")
+            else:
+                print("Sin ofertas nuevas ni novedades de juegos seguidos, no se manda nada.")
             return
 
-        text = build_digest_text(qualifying)
-        subscribers = get_active_subscribers(conn)
+        greeting = period_greeting(conn)
+        digest_sent = watch_sent = 0
+        for chat_id in recipients:
+            parts = []
+            if chat_id in alerts_by_chat:
+                parts.append(format_watch_section(alerts_by_chat[chat_id]))
+            if chat_id in digest_subscribers:
+                parts.append(digest_body)
 
-        if not subscribers:
-            print(f"{len(qualifying)} ofertas calificaron, pero no hay suscriptores activos. No se marca nada.")
-            return
-
-        sent_count = 0
-        for chat_id in subscribers:
-            result = send_message(chat_id, text)
+            result = send_parts(chat_id, greeting, parts)
             if result.get("ok"):
-                sent_count += 1
+                digest_sent += chat_id in digest_subscribers
+                if chat_id in alerts_by_chat:
+                    watch_sent += len(alerts_by_chat[chat_id])
+                    save_state(conn, alerts_by_chat[chat_id], alerted=True)
             elif result.get("error_code") == 403:
                 print(f"Chat {chat_id} bloqueo el bot, lo marco inactivo.")
                 mark_blocked_by_user(conn, chat_id)
@@ -132,12 +187,13 @@ def main():
 
         conn.commit()
 
-        if sent_count > 0:
+        if digest_sent > 0:
             mark_offers_as_notified(conn, qualifying)
             conn.commit()
-            print(f"Digest mandado a {sent_count} suscriptores, {len(qualifying)} ofertas marcadas como notificadas.")
-        else:
-            print("No se pudo mandar a ningun suscriptor, no se marca nada.")
+            print(f"Resumen mandado a {digest_sent} suscriptores, {len(qualifying)} ofertas marcadas como notificadas.")
+        elif digest_subscribers:
+            print("No se pudo mandar el resumen a ningun suscriptor, no se marcan ofertas.")
+        print(f"Avisos de juegos seguidos enviados: {watch_sent} de {len(watch_alerts)}.")
     finally:
         conn.close()
 
