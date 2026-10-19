@@ -69,11 +69,16 @@ internos — no hay superficie pública adicional que proteger.
 - ~3.000 juegos de mesa comprables hoy, ~1.060 comparables en 2+ tiendas
   (con stock) y ~570 con mediana confiable (3+ tiendas). Cada producto tiene imagen y descripción corta, extraídas del
   propio HTML scrapeado (sin depender de ninguna API externa).
-- Cron diario corriendo en GitHub Actions para 12 de las 13 tiendas (UpDown
-  queda solo para corrida manual, ver "Scraping responsable").
-- Bot de Telegram funcionando (`/start`, `/stop`, `/dar_de_baja`, `/ayuda`):
-  resumen diario de ofertas (destacadas 50%+ y regulares 20%+ bajo la
-  mediana), con polling cada ~15 min vía GitHub Actions.
+- Dos corridas diarias en GitHub Actions (mañana y justo después del horario
+  laboral) para 12 de las 13 tiendas; UpDown queda solo para corrida manual,
+  ver "Scraping responsable". El historial de precios guarda solo cambios.
+- Bot de Telegram (`/start`, `/stop`, `/seguir`, `/siguiendo`, `/dar_de_baja`,
+  `/ayuda`): resumen de ofertas (destacadas 50%+ y regulares 20%+ bajo la
+  mediana) y avisos de los juegos que cada persona sigue (bajan de precio o
+  vuelven a tener stock). **Limitación conocida:** al no haber servidor, los
+  comandos se leen con un workflow programado de GitHub Actions que en la
+  práctica corre cada ~3 horas (mediana medida), así que las respuestas no son
+  inmediatas. Se resuelve con un webhook cuando exista el backend.
 - Política de retención de datos: `price_history` se poda a 8 meses, y un
   producto sin ningún listing activo hace 6+ meses se oculta (soft-delete,
   reversible si vuelve a aparecer).

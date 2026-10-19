@@ -3,7 +3,8 @@
     python -m src.alert_manual_stores               # avisa si corresponde
     python -m src.alert_manual_stores --dry-run     # muestra que mandaria, sin enviar ni guardar
 
-Corre cada 15 minutos junto con el polling del bot. Por cada tienda de
+Corre junto con el polling del bot (programado cada 15 min, pero en la practica
+GitHub lo ejecuta cada ~3 h: el aviso de "2 horas antes" puede llegar tarde). Por cada tienda de
 manual_stores calcula cuanto falta para que se cumpla el plazo en que sus
 listings pasan a inactivos (STALE_AFTER_DAYS desde la ultima vez que se
 scrapeo) y manda un aviso cuando faltan 24, 12 y 2 horas.

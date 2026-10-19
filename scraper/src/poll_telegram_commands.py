@@ -1,8 +1,11 @@
 """Revisa comandos pendientes del bot de Telegram y los procesa.
 
-Pensado para correr cada ~15 min via GitHub Actions (FR-T7): no hay
+Pensado para correr cada 15 min via GitHub Actions (FR-T7): no hay
 servidor persistente, asi que esto reemplaza al webhook/long-polling
-habitual por un poll corto y periodico.
+habitual por un poll periodico. OJO: GitHub espacia mucho los workflows
+programados de alta frecuencia; medido entre el 15 y el 18-oct-2026, corrio
+en la practica cada ~3 h (mediana 187 min, de 107 a 314). Las respuestas no
+son inmediatas hasta que un backend reciba el webhook de Telegram.
 
 Anti-abuso (ver memoria del proyecto): de cada chat se procesan como maximo los
 ultimos MAX_COMMANDS_PER_CHAT comandos de la tanda; el resto se descarta sin

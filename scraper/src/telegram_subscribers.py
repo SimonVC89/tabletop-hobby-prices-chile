@@ -9,7 +9,7 @@ HELP_TEXT = (
     "/dar_de_baja - baja total y permanente de todo aviso (también borra tu lista). "
     "Para reactivar vas a necesitar visitar la página web (todavía no disponible).\n"
     "/ayuda - este mensaje\n\n"
-    "Las respuestas pueden tardar hasta 15 minutos. Gracias por la paciencia."
+    "Las respuestas no son inmediatas: pueden tardar varias horas. Gracias por la paciencia."
 )
 
 

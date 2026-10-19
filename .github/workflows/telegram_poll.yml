@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: scraper/requirements.txt
 
       # Solo las dependencias minimas que usa este script (no todo
-      # requirements.txt): esto corre cada 15 min, no tiene sentido
+      # requirements.txt): esto corre seguido (programado cada 15 min), no tiene sentido
       # instalar sentence-transformers/torch en cada corrida.
       - name: Install dependencies
         run: pip install requests==2.32.3 python-dotenv==1.0.1 psycopg2-binary==2.9.10
