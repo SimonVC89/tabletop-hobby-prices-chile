@@ -23,6 +23,13 @@ export interface Api {
   getOffers(): Promise<Offer[]>
   getProduct(id: string): Promise<ProductDetail>
   getPriceHistory(id: string): Promise<PriceHistory>
+  /**
+   * Juegos relacionados (hasta 6), solo los que hoy tienen stock. Regla del
+   * snapshot (scraper/src/export_frontend_snapshot.py, compute_similar), que
+   * el backend debe replicar: misma saga (primera palabra del nombre) con
+   * similitud de embedding >= 0.60, o similitud >= 0.78; la saga va primero.
+   * Los embeddings son de titulos: captan sagas, no mecanicas de juego.
+   */
   getSimilarProducts(id: string): Promise<ProductSummary[]>
 }
 

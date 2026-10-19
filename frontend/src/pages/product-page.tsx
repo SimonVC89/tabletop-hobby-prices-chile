@@ -6,6 +6,7 @@ import { usePriceHistory, useProduct } from '@/api/hooks'
 import type { ProductDetail } from '@/api/types'
 import { PriceAnalysisPanel } from '@/components/product/price-analysis'
 import { PriceHistoryChart } from '@/components/product/price-history-chart'
+import { RelatedGames } from '@/components/product/related-games'
 import { StorePriceList } from '@/components/product/store-price-list'
 import { ProductImage } from '@/components/product-image'
 import { Button } from '@/components/ui/button'
@@ -107,6 +108,8 @@ export function ProductPage() {
           )}
         </div>
       </section>
+
+      <RelatedGames key={id} productId={id} />
     </article>
   )
 }

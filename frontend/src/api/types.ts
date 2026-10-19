@@ -26,7 +26,7 @@ export interface Store {
  */
 export type StoreStatus = 'daily' | 'manual' | 'excluded'
 
-/** Tarjeta de producto en catalogo, busqueda y "similares". */
+/** Tarjeta de producto en catalogo, busqueda y "relacionados". */
 export interface ProductSummary {
   id: string
   name: string

@@ -9,6 +9,7 @@ generados no se versionan: se regeneran corriendo este script.
 """
 
 import json
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -16,6 +17,7 @@ import numpy as np
 from pgvector.psycopg2 import register_vector
 
 from src.db import get_connection
+from src.matching.normalize import strip_accents
 
 OUT_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public" / "mock"
 MANUAL_ONLY_STORES = {"UpDown"}
@@ -23,6 +25,46 @@ MIN_STORES_FOR_MEDIAN = 3
 OFFER_THRESHOLD = 20
 DESTACADA_THRESHOLD = 50
 SIMILAR_COUNT = 6
+
+# "Relacionados": los embeddings se calculan sobre el TITULO, asi que captan
+# sagas y nombres parecidos, no mecanicas (a Azul le salian "Bluey" y "Pokebola
+# Tin Azul"). Bajo ~0.78 todo es ruido, asi que solo entran:
+#  - juegos de la misma saga (misma primera palabra del nombre) con un minimo
+#    de similitud, para descartar homonimos ("Star Realms" vs "Star Trek");
+#  - juegos con titulo casi identico por embeddings.
+# Y solo los que hoy se pueden comprar.
+# 0.45: las ediciones con licencia ("Dobble Paw Patrol" / "Dobble Spiderman")
+# comparten saga pero el tema domina el titulo y la similitud queda en ~0.5.
+FAMILY_MIN_SCORE = 0.45
+SIMILAR_MIN_SCORE = 0.78
+FAMILY_BONUS = 0.15  # la saga va antes que un parecido por embedding
+FAMILY_STOPWORDS = {"el", "la", "los", "las", "un", "una", "the", "de", "del"}
+# Primeras palabras que no identifican una saga ("Juego de ...", "Pack ...").
+GENERIC_FIRST_WORDS = {
+    "juego", "juegos", "pack", "kit", "set", "caja", "mini", "super", "gran", "expansion",
+    "ampliacion", "cartas", "tablero", "mazo", "tapete", "dados", "libro", "guia",
+}
+
+
+# Palabras iniciales compartidas por sagas que no tienen nada que ver ("Star
+# Realms" / "Star Wars" / "Star Trek"): para estas la saga se identifica con
+# las dos primeras palabras.
+AMBIGUOUS_FIRST_WORDS = {
+    "star", "dark", "black", "blue", "red", "white", "gold", "golden", "love", "happy", "little", "big", "mega",
+}
+
+
+def family_key(name: str) -> str | None:
+    """Identifica la saga de un juego por el inicio de su nombre ("Catan Junior" -> "catan")."""
+    words = re.sub(r"[^a-z0-9]+", " ", strip_accents(name).lower()).split()
+    while words and words[0] in FAMILY_STOPWORDS:
+        words.pop(0)
+    if not words or words[0] in GENERIC_FIRST_WORDS:
+        return None
+    if len(words[0]) >= 4 and words[0] not in AMBIGUOUS_FIRST_WORDS:
+        return words[0]
+    # Palabra inicial corta ("7 Wonders", "Ark Nova"): se necesitan dos.
+    return " ".join(words[:2]) if len(words) >= 2 else None
 
 
 def rows(cur, sql, params=()):
@@ -247,7 +289,11 @@ def export_details(cur, product_ids):
 
 
 def compute_similar(cur, target_ids, summaries_by_id):
-    """Vecinos mas cercanos por embedding promedio de los listings de cada producto."""
+    """Juegos relacionados: de la misma saga o con titulo casi identico, solo con stock.
+
+    Usa el embedding promedio de los listings de cada producto (ver las
+    constantes FAMILY_* / SIMILAR_* arriba para el porque de los umbrales).
+    """
     vectors = defaultdict(list)
     cur.execute("""
         select product_id::text, title_embedding from product_listings
@@ -261,14 +307,22 @@ def compute_similar(cur, target_ids, summaries_by_id):
     matrix = np.array([np.mean(vectors[i], axis=0) for i in ids], dtype=np.float32)
     matrix /= np.linalg.norm(matrix, axis=1, keepdims=True)
     index_of = {pid: i for i, pid in enumerate(ids)}
+    families = [family_key(summaries_by_id[pid]["name"]) for pid in ids]
+    # Solo se sugieren juegos que hoy se pueden comprar (aunque el actual no).
+    buyable = np.array([summaries_by_id[pid]["bestPrice"] is not None for pid in ids])
 
     similar = {}
     for pid in target_ids:
         if pid not in index_of:
             continue
-        scores = matrix @ matrix[index_of[pid]]
-        scores[index_of[pid]] = -1
-        top = np.argsort(-scores)[:SIMILAR_COUNT]
+        me = index_of[pid]
+        scores = matrix @ matrix[me]
+        same_family = np.array([families[me] is not None and f == families[me] for f in families])
+
+        eligible = buyable & (scores >= SIMILAR_MIN_SCORE) | buyable & same_family & (scores >= FAMILY_MIN_SCORE)
+        eligible[me] = False
+        ranking = np.where(eligible, scores + FAMILY_BONUS * same_family, -np.inf)
+        top = [i for i in np.argsort(-ranking)[:SIMILAR_COUNT] if np.isfinite(ranking[i])]
         similar[pid] = [summaries_by_id[ids[i]] for i in top]
     return similar
 
