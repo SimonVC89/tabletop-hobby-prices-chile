@@ -1,6 +1,5 @@
 package io.github.simonvc89.thpc.product;
 
-import java.text.Collator;
 import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -29,10 +28,11 @@ public final class ProductSearch {
             int pageSize) {
     }
 
-    private static final Pattern MARKS = Pattern.compile("\\p{M}+");
+    // Solo los acentos (U+0300-U+036F), igual que el mock: \p{M} tambien borraria
+    // marcas como el selector de emoji U+FE0F y cambiaria el largo del nombre.
+    private static final Pattern MARKS = Pattern.compile("[\\u0300-\\u036f]+");
     private static final Pattern SPACES = Pattern.compile("\\s+");
     private static final Pattern NON_WORD = Pattern.compile("[^a-z0-9]+");
-    private static final Collator NAME_ORDER = Collator.getInstance(Locale.of("es"));
 
     private ProductSearch() {
     }
@@ -85,9 +85,13 @@ public final class ProductSearch {
             }
         };
 
+        // Desempate explicito e igual al del mock (nombre normalizado caracter a caracter,
+        // luego id): el orden alfabetico "del idioma" difiere entre el navegador y Java.
+        Map<UUID, String> names = new HashMap<>();
         return Comparator.comparing((ProductSummary p) -> !p.inStock())
                 .thenComparing(criterion)
-                .thenComparing(ProductSummary::name, NAME_ORDER);
+                .thenComparing(p -> names.computeIfAbsent(p.id(), id -> normalize(p.name())))
+                .thenComparing(p -> p.id().toString());
     }
 
     /**

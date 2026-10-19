@@ -118,8 +118,15 @@ function sortProducts(items: ProductSummary[], sort: ProductQuery['sort'], q: st
     }
   })()
 
+  // Desempate explicito, igual al del backend (ProductSearch.java): nombre normalizado
+  // caracter a caracter y luego id. localeCompare ordena distinto que Java.
+  const names = new Map(items.map((p) => [p.id, normalize(p.name)]))
+  const byText = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0)
   const outOfStock = (p: ProductSummary) => (p.bestPrice === null ? 1 : 0)
-  return [...items].sort((a, b) => outOfStock(a) - outOfStock(b) || compare(a, b) || a.name.localeCompare(b.name))
+  return [...items].sort(
+    (a, b) =>
+      outOfStock(a) - outOfStock(b) || compare(a, b) || byText(names.get(a.id)!, names.get(b.id)!) || byText(a.id, b.id),
+  )
 }
 
 function createMockApi(): Api {

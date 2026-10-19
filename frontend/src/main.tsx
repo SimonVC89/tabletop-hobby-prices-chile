@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
+import { NotFoundError } from '@/api/client'
 import { AppLayout } from '@/components/layout/app-layout'
 import { LegacyOffersRedirect } from '@/components/layout/legacy-offers-redirect'
 import { HomePage } from '@/pages/home-page'
@@ -12,7 +13,13 @@ import { SearchPage } from '@/pages/search-page'
 import { TelegramPage } from '@/pages/telegram-page'
 import './index.css'
 
-const queryClient = new QueryClient()
+// Un 404 no cambia al reintentar: se muestra la pagina de "no existe" de inmediato.
+// Los demas errores (red, servidor dormido) si se reintentan, hasta 3 veces.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: (failures, error) => !(error instanceof NotFoundError) && failures < 3 },
+  },
+})
 
 const router = createBrowserRouter([
   {

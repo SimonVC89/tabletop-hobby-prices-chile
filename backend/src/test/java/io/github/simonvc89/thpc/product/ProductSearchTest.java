@@ -30,6 +30,12 @@ class ProductSearchTest {
     }
 
     @Test
+    void soloQuitaAcentosNoOtrasMarcas() {
+        // El selector de emoji U+FE0F se conserva, como en el mock del frontend.
+        assertThat(ProductSearch.normalize("Árbol 🧙‍♂️")).isEqualTo("arbol 🧙‍♂️");
+    }
+
+    @Test
     void todasLasPalabrasDebenAparecer() {
         assertThat(search("catan ciudades", ProductSort.RELEVANCE)).containsExactly(CATAN_CIUDADES);
     }
