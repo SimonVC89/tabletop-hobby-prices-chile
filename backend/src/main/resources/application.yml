@@ -19,6 +19,11 @@ spring:
       ddl-auto: validate
     open-in-view: false
 
+thpc:
+  # Igual que MANUAL_ONLY_STORES en scraper/src/manual_stores.py.
+  manual-stores:
+    - UpDown
+
 server:
   # Render asigna el puerto en la variable PORT.
   port: ${PORT:8080}

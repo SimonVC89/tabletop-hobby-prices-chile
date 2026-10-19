@@ -286,7 +286,8 @@ def export_details(cur, product_ids):
         join stores s on s.id = pl.store_id
         where pl.product_id::text = any(%s) and s.active
         order by pl.product_id, pl.store_id, pl.is_active desc,
-                 (l.in_stock and pl.is_active) desc, l.price_clp
+                 (l.in_stock and pl.is_active) desc, l.price_clp,
+                 pl.last_seen_at desc, pl.url  -- desempate fijo (mismo juego en dos paginas iguales)
     """, (product_ids, product_ids)):
         listings[l["product_id"]].append({
             "storeId": l["store_id"],
