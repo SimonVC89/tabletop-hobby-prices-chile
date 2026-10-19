@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router'
 import { AppLayout } from '@/components/layout/app-layout'
 import { LegacyOffersRedirect } from '@/components/layout/legacy-offers-redirect'
 import { HomePage } from '@/pages/home-page'
+import { HowItWorksPage } from '@/pages/how-it-works-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { OffersPage } from '@/pages/offers-page'
 import { SearchPage } from '@/pages/search-page'
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { path: 'ofertas', element: <OffersPage /> },
       { path: 'juegos', element: <SearchPage /> },
       { path: 'telegram', element: <TelegramPage /> },
+      { path: 'como-funciona', element: <HowItWorksPage /> },
       // Carga diferida: el detalle trae Recharts (~110 KB gzip) y la portada no lo necesita.
       {
         path: 'juego/:id',

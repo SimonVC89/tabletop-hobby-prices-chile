@@ -15,6 +15,7 @@ const DESKTOP_NAV = [
   { to: '/ofertas', label: 'Ofertas' },
   { to: '/juegos', label: 'Buscar juegos' },
   { to: '/telegram', label: 'Telegram' },
+  { to: '/como-funciona', label: 'Cómo funciona' },
 ]
 
 const MOBILE_NAV = [
@@ -129,6 +130,10 @@ function SiteFooter() {
         </p>
         <p>
           Proyecto personal ·{' '}
+          <Link to="/como-funciona" className="underline-offset-4 hover:text-foreground hover:underline">
+            cómo funciona
+          </Link>{' '}
+          ·{' '}
           <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:text-foreground hover:underline">
             código en GitHub
           </a>
