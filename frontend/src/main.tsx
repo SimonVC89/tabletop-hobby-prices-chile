@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { OffersPage } from '@/pages/offers-page'
 import { SearchPage } from '@/pages/search-page'
+import { TelegramPage } from '@/pages/telegram-page'
 import './index.css'
 
 const queryClient = new QueryClient()
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <OffersPage /> },
       { path: 'juegos', element: <SearchPage /> },
+      { path: 'telegram', element: <TelegramPage /> },
       // Carga diferida: el detalle trae Recharts (~110 KB gzip) y la portada no lo necesita.
       {
         path: 'juego/:id',
