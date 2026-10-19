@@ -1,0 +1,30 @@
+# Credenciales por variables de entorno (en Render) o, en local, desde backend/.env
+# (no se versiona; ver .env.example).
+spring:
+  application:
+    name: thpc-api
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      # El plan gratuito de Supabase limita las conexiones; la API es casi toda lectura.
+      maximum-pool-size: 5
+  jpa:
+    # El esquema lo definen las migraciones de supabase/migrations: Hibernate solo
+    # comprueba que las entidades calcen con las tablas, nunca las crea ni altera.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+server:
+  # Render asigna el puerto en la variable PORT.
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
