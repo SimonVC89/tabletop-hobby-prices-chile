@@ -17,3 +17,6 @@ target/
 # Informes de revision manual que generan los scripts de matching
 *_revision.md
 *_revision.json
+
+# Modo api de Vite: solo la URL del backend local, sin secretos
+!frontend/.env.api

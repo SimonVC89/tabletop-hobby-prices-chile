@@ -23,6 +23,9 @@ thpc:
   # Igual que MANUAL_ONLY_STORES en scraper/src/manual_stores.py.
   manual-stores:
     - UpDown
+  # Separados por coma. En Render: CORS_ALLOWED_ORIGINS con el dominio del frontend.
+  # 5173 = npm run dev, 4173 = npm run preview.
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:4173}
 
 server:
   # Render asigna el puerto en la variable PORT.
