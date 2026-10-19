@@ -66,12 +66,44 @@ def upsert_listing(conn, store_id: str, product: dict) -> str:
         return cur.fetchone()[0]
 
 
-def insert_price_history(conn, listing_id: str, price_clp: int, in_stock: bool):
+def insert_price_history(conn, listing_id: str, price_clp: int, in_stock: bool) -> bool:
+    """Guarda el precio solo si cambio el precio o el stock respecto de la
+    ultima fila del listing. Devuelve True si guardo una fila.
+
+    price_history es un registro de CAMBIOS, no una foto por corrida: el
+    precio vigente de un dia sin fila es el de la ultima fila anterior (mientras
+    el listing siga apareciendo en la tienda, ver product_listings.last_seen_at).
+    Asi se puede scrapear varias veces al dia sin que la tabla crezca: el 83% de
+    las filas guardadas una vez por dia repetia el estado anterior.
+    """
     with conn.cursor() as cur:
         cur.execute(
             """
             insert into price_history (listing_id, price_clp, in_stock)
-            values (%s, %s, %s)
+            select %(listing)s, %(price)s, %(stock)s
+            where not exists (
+                select 1 from (
+                    select price_clp, in_stock from price_history
+                    where listing_id = %(listing)s
+                    order by scraped_at desc limit 1
+                ) last
+                where last.price_clp = %(price)s and last.in_stock = %(stock)s
+            )
             """,
-            (listing_id, price_clp, in_stock),
+            {"listing": listing_id, "price": price_clp, "stock": in_stock},
         )
+        return cur.rowcount == 1
+
+
+def save_products(conn, store_id: str, products: list[dict]) -> tuple[int, int]:
+    """Guarda los listings scrapeados de una tienda y los cambios de precio/stock.
+
+    Devuelve (listings actualizados, filas nuevas en price_history). Es el bucle
+    que antes se repetia en cada ingest_*.py.
+    """
+    changes = 0
+    for product in products:
+        listing_id = upsert_listing(conn, store_id, product)
+        if insert_price_history(conn, listing_id, product["price_clp"], product["in_stock"]):
+            changes += 1
+    return len(products), changes

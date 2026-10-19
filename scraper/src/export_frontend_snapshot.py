@@ -11,20 +11,24 @@ generados no se versionan: se regeneran corriendo este script.
 import json
 import re
 from collections import defaultdict
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
 from pgvector.psycopg2 import register_vector
 
 from src.db import get_connection
+from src.manual_stores import MANUAL_ONLY_STORES
 from src.matching.normalize import strip_accents
 
 OUT_DIR = Path(__file__).resolve().parents[2] / "frontend" / "public" / "mock"
-MANUAL_ONLY_STORES = {"UpDown"}
 MIN_STORES_FOR_MEDIAN = 3
 OFFER_THRESHOLD = 20
 DESTACADA_THRESHOLD = 50
 SIMILAR_COUNT = 6
+# Primer dia (hora de Chile) en que price_history guarda solo cambios, no una
+# fila por scraping. Ver db.insert_price_history y export_details.
+CHANGES_ONLY_FROM = date(2026, 10, 19)
 
 # "Relacionados": los embeddings se calculan sobre el TITULO, asi que captan
 # sagas y nombres parecidos, no mecanicas (a Azul le salian "Bluey" y "Pokebola
@@ -115,11 +119,17 @@ def export_products(cur):
             where cp.in_stock
             order by cp.product_id, cp.price_clp
         ),
+        -- price_history guarda solo cambios: la fecha en que "se vio" el precio es
+        -- la ultima vez que la tienda mostro el listing, no la de la fila.
         last_seen as (
             select distinct on (pl.product_id)
-                   pl.product_id, ph.price_clp, ph.scraped_at
-            from price_history ph join product_listings pl on pl.id = ph.listing_id
-            order by pl.product_id, ph.scraped_at desc, ph.price_clp
+                   pl.product_id, ph.price_clp, pl.last_seen_at as scraped_at
+            from product_listings pl
+            join lateral (
+                select price_clp from price_history
+                where listing_id = pl.id order by scraped_at desc limit 1
+            ) ph on true
+            order by pl.product_id, pl.last_seen_at desc, ph.price_clp
         )
         select p.id::text, p.canonical_name, p.image_url,
                coalesce(pps.store_count, 0) as store_count,
@@ -194,7 +204,7 @@ def export_offers(cur):
 
 def export_details(cur, product_ids):
     products = {p["id"]: p for p in rows(cur, """
-        select p.id::text, p.canonical_name, p.image_url, p.description,
+        select p.id::text, p.canonical_name, p.image_url, p.description, p.description_source,
                round(pps.median_price_clp)::int as median_price,
                pps.min_price_clp, pps.max_price_clp, pps.store_count
         from products p left join product_price_stats pps on pps.product_id = p.id
@@ -232,22 +242,59 @@ def export_details(cur, product_ids):
             "lastSeenAt": l["last_seen_at"].isoformat(),
         })
 
-    # Un punto por tienda y dia: el precio mas bajo con stock de ese dia
-    # (si la tienda tiene el juego en dos paginas, cuenta la mas barata).
-    history = defaultdict(lambda: defaultdict(dict))
-    store_names = {}
+    # Un punto por tienda y dia: el precio mas bajo con stock de ese dia (si la
+    # tienda tiene el juego en dos paginas, cuenta la mas barata).
+    #
+    # price_history guarda solo cambios, asi que cada dia se reconstruye: el
+    # estado de un listing vale desde su fila hasta el dia anterior a la
+    # siguiente, y la ultima fila vale hasta la ultima vez que la tienda mostro
+    # el listing (o hasta el ultimo scraping si sigue activo). Los dias son de
+    # Chile, no UTC: una corrida de las 23:10 hora de Chile es de ese dia.
+    cur.execute("select (max(last_seen_at) at time zone 'America/Santiago')::date from product_listings")
+    last_scrape_day = cur.fetchone()[0]
+
+    listing_days = defaultdict(dict)  # listing_id -> {dia: (precio, en_stock)}; manda la ultima fila del dia
+    listing_info = {}
     for h in rows(cur, """
-        select distinct on (pl.product_id, pl.store_id, ph.scraped_at::date)
-               pl.product_id::text, s.id::text as store_id, s.name as store_name,
-               ph.scraped_at::date as day, ph.price_clp, ph.in_stock
+        select pl.id::text as listing_id, pl.product_id::text, s.id::text as store_id, s.name as store_name,
+               pl.is_active, (pl.last_seen_at at time zone 'America/Santiago')::date as seen_day,
+               (ph.scraped_at at time zone 'America/Santiago')::date as day, ph.price_clp, ph.in_stock
         from price_history ph
         join product_listings pl on pl.id = ph.listing_id
         join stores s on s.id = pl.store_id
         where pl.product_id::text = any(%s)
-        order by pl.product_id, pl.store_id, ph.scraped_at::date, ph.in_stock desc, ph.price_clp
+        order by pl.id, ph.scraped_at
     """, (product_ids,)):
-        store_names[h["store_id"]] = h["store_name"]
-        history[h["product_id"]][h["store_id"]][h["day"].isoformat()] = (h["price_clp"], h["in_stock"])
+        listing_days[h["listing_id"]][h["day"]] = (h["price_clp"], h["in_stock"])
+        listing_info[h["listing_id"]] = h
+
+    # Antes de CHANGES_ONLY_FROM se guardaba una fila por listing en cada
+    # scraping, asi que un dia sin fila es un dia SIN scraping (desconocido, no
+    # "sin cambios"): ahi no se rellena y el grafico muestra el hueco. Desde esa
+    # fecha, un dia sin fila es un precio que no cambio.
+    scraped_days = defaultdict(set)  # tienda -> dias con scraping anteriores al registro de cambios
+    for listing_id, days in listing_days.items():
+        scraped_days[listing_info[listing_id]["store_id"]] |= {d for d in days if d < CHANGES_ONLY_FROM}
+
+    history = defaultdict(lambda: defaultdict(dict))  # producto -> tienda -> dia(iso) -> (precio, en_stock)
+    store_names = {}
+    for listing_id, days in listing_days.items():
+        info = listing_info[listing_id]
+        store_names[info["store_id"]] = info["store_name"]
+        end = last_scrape_day if info["is_active"] else info["seen_day"]
+        known = scraped_days[info["store_id"]]
+        by_day = history[info["product_id"]][info["store_id"]]
+        ordered = sorted(days.items())
+        for i, (day, (price, in_stock)) in enumerate(ordered):
+            stop = ordered[i + 1][0] - timedelta(days=1) if i + 1 < len(ordered) else end
+            for offset in range(max((stop - day).days, 0) + 1):
+                d = day + timedelta(days=offset)
+                if offset and d < CHANGES_ONLY_FROM and d not in known:
+                    continue
+                key = d.isoformat()
+                # Entre listings de una misma tienda: con stock primero, y el mas barato.
+                if key not in by_day or (not in_stock, price) < (not by_day[key][1], by_day[key][0]):
+                    by_day[key] = (price, in_stock)
 
     details = {}
     for pid in product_ids:
@@ -280,6 +327,7 @@ def export_details(cur, product_ids):
                 "name": p["canonical_name"],
                 "imageUrl": p["image_url"],
                 "description": p["description"],
+                "descriptionSource": p["description_source"] if p["description"] else None,
                 "listings": sorted(listings[pid], key=lambda l: l["price"]),
                 "stats": stats,
             },
@@ -337,7 +385,8 @@ def main():
     register_vector(conn)
     try:
         with conn.cursor() as cur:
-            cur.execute("select max(scraped_at) from price_history")
+            # Ultimo scraping, no la ultima fila de price_history (que ahora solo guarda cambios).
+            cur.execute("select max(last_seen_at) from product_listings")
             meta = {"lastUpdated": cur.fetchone()[0].isoformat()}
             stores = export_stores(cur)
             products = export_products(cur)
@@ -354,6 +403,9 @@ def main():
     write(OUT_DIR / "stores.json", stores)
     write(OUT_DIR / "products.json", products)
     write(OUT_DIR / "offers.json", offers)
+    # Fichas de productos que ya no existen (fusionados u ocultos) no deben sobrevivir.
+    for stale in (OUT_DIR / "products").glob("*.json"):
+        stale.unlink()
     for pid, d in details.items():
         write(OUT_DIR / "products" / f"{pid}.json", {**d, "similar": similar.get(pid, [])})
 

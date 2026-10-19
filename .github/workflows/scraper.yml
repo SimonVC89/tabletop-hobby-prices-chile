@@ -2,13 +2,24 @@ name: Scrape and match board game prices
 
 on:
   schedule:
-    # 08:17 UTC = 05:17 Chile en horario de verano (UTC-3, sep-abr) / 04:17 en
-    # horario estandar (UTC-4, abr-sep). Captura los cambios de la jornada
-    # anterior y las ofertas programadas a medianoche. El minuto 17 es a
-    # proposito: GitHub atrasa mas los cron a la hora en punto (con "0 9"
-    # llegaban ~5 h tarde).
+    # Dos corridas al dia (hora de Chile en verano UTC-3, sep-abr / invierno UTC-4, abr-sep):
+    # - 08:17 UTC = 05:17 / 04:17: captura los cambios de la jornada anterior y las
+    #   ofertas programadas a medianoche.
+    # - 22:17 UTC = 19:17 / 18:17: justo despues del horario laboral (8-18 h), cuando las
+    #   tiendas ya cambiaron sus precios del dia.
+    # El minuto 17 es a proposito: GitHub atrasa mas los cron a la hora en punto (con
+    # "0 9" llegaban ~5 h tarde).
+    # Guardar solo cambios en price_history (db.insert_price_history) es lo que permite
+    # scrapear dos veces al dia sin que la base crezca el doble.
     - cron: "17 8 * * *"
+    - cron: "17 22 * * *"
   workflow_dispatch: {}
+
+# Si una corrida se atrasa y se junta con la siguiente, esperan en fila en vez de
+# pisarse (dos corridas escribiendo a la vez duplicarian trabajo y avisos).
+concurrency:
+  group: scrape-and-match
+  cancel-in-progress: false
 
 jobs:
   scrape:
@@ -120,6 +131,14 @@ jobs:
 
       - name: Choose display names
         run: python -m src.matching.display_names
+
+      # Descripcion corta de los productos nuevos (el catalogo de cada tienda
+      # solo trae el titulo). Tope por corrida: si hay mas, siguen otro dia.
+      # UpDown bloquea a GitHub; su pagina solo se pide corriendolo a mano.
+      # No es critico: si falla, no tumba el resto del pipeline.
+      - name: Fetch missing descriptions
+        continue-on-error: true
+        run: python -m src.fetch_descriptions --limit 150 --skip-stores UpDown
 
       - name: Classify products
         run: python -m src.matching.classify
