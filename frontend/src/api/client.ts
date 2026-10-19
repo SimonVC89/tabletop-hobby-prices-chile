@@ -2,6 +2,7 @@ import type {
   Meta,
   Offer,
   Page,
+  PriceDrop,
   PriceHistory,
   ProductDetail,
   ProductQuery,
@@ -21,6 +22,8 @@ export interface Api {
   getStores(): Promise<Store[]>
   getProducts(query?: ProductQuery): Promise<Page<ProductSummary>>
   getOffers(): Promise<Offer[]>
+  /** Bajas de precio de las ultimas 24 horas; ver PriceDrop para la regla. */
+  getPriceDrops(): Promise<PriceDrop[]>
   getProduct(id: string): Promise<ProductDetail>
   getPriceHistory(id: string): Promise<PriceHistory>
   /**
@@ -59,6 +62,7 @@ function createHttpApi(baseUrl: string): Api {
     getStores: () => getJson(`${baseUrl}/api/stores`),
     getProducts: (query = {}) => getJson(`${baseUrl}/api/products${toSearchParams(query)}`),
     getOffers: () => getJson(`${baseUrl}/api/offers`),
+    getPriceDrops: () => getJson(`${baseUrl}/api/price-drops`),
     getProduct: (id) => getJson(`${baseUrl}/api/products/${id}`),
     getPriceHistory: (id) => getJson(`${baseUrl}/api/products/${id}/price-history`),
     getSimilarProducts: (id) => getJson(`${baseUrl}/api/products/${id}/similar`),
@@ -132,6 +136,7 @@ function createMockApi(): Api {
     getMeta: () => getJson('/mock/meta.json'),
     getStores: () => getJson('/mock/stores.json'),
     getOffers: () => getJson('/mock/offers.json'),
+    getPriceDrops: () => getJson('/mock/price-drops.json'),
 
     async getProducts(query = {}) {
       const {

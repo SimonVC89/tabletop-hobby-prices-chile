@@ -3,6 +3,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { AppLayout } from '@/components/layout/app-layout'
+import { LegacyOffersRedirect } from '@/components/layout/legacy-offers-redirect'
+import { HomePage } from '@/pages/home-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { OffersPage } from '@/pages/offers-page'
 import { SearchPage } from '@/pages/search-page'
@@ -15,7 +17,16 @@ const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
-      { index: true, element: <OffersPage /> },
+      // Las ofertas vivian en "/": los links viejos con filtros siguen funcionando.
+      {
+        index: true,
+        element: (
+          <LegacyOffersRedirect>
+            <HomePage />
+          </LegacyOffersRedirect>
+        ),
+      },
+      { path: 'ofertas', element: <OffersPage /> },
       { path: 'juegos', element: <SearchPage /> },
       { path: 'telegram', element: <TelegramPage /> },
       // Carga diferida: el detalle trae Recharts (~110 KB gzip) y la portada no lo necesita.

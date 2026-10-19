@@ -1,18 +1,26 @@
-import { Search, Send, Tag } from 'lucide-react'
+import { House, Search, Send, Tag } from 'lucide-react'
 import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
 import { usingMockData } from '@/api/client'
 import { useMeta } from '@/api/hooks'
 import { Logo } from '@/components/logo'
 import { useScrolled } from '@/hooks/use-scrolled'
-import { formatDateTime } from '@/lib/format'
+import { formatUpdated } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-// En pantallas chicas el menu pasa a una barra inferior con iconos: con 3 opciones
-// ya no cabe junto al logo (que se mantiene grande a proposito) y cada pagina nueva
-// lo volveria a romper.
-const NAV = [
-  { to: '/', label: 'Ofertas', icon: Tag },
-  { to: '/juegos', label: 'Buscar juegos', icon: Search },
+// Dos menus para dos usos. En escritorio (donde suele mirar un reclutador) va todo,
+// incluido "Como funciona"; el Inicio se alcanza con el logo. En pantallas chicas el
+// menu pasa a una barra inferior con lo de uso diario: arriba no cabe junto al logo
+// (que se mantiene grande a proposito).
+const DESKTOP_NAV = [
+  { to: '/ofertas', label: 'Ofertas' },
+  { to: '/juegos', label: 'Buscar juegos' },
+  { to: '/telegram', label: 'Telegram' },
+]
+
+const MOBILE_NAV = [
+  { to: '/', label: 'Inicio', icon: House },
+  { to: '/ofertas', label: 'Ofertas', icon: Tag },
+  { to: '/juegos', label: 'Buscar', icon: Search },
   { to: '/telegram', label: 'Telegram', icon: Send },
 ]
 
@@ -46,7 +54,7 @@ export function AppLayout() {
               <Logo size="compact" className={cn(LOGO_SWAP, !compact && cn(LOGO_HIDDEN, 'scale-125'))} />
             </Link>
             <nav aria-label="Principal" className="hidden items-center gap-1 sm:flex">
-              {NAV.map((item) => (
+              {DESKTOP_NAV.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -84,7 +92,7 @@ function MobileNav() {
       aria-label="Principal"
       className="fixed inset-x-0 bottom-0 z-30 flex border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
     >
-      {NAV.map((item) => (
+      {MOBILE_NAV.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -116,7 +124,7 @@ function SiteFooter() {
       {/* pb-20 en celular: deja espacio para que la barra inferior no tape el pie. */}
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 pt-6 pb-20 text-sm sm:pb-6 text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p>
-          {meta ? <>Precios actualizados el {formatDateTime(meta.lastUpdated)}</> : 'Precios actualizados a diario'}
+          {meta ? <>Precios actualizados {formatUpdated(meta.lastUpdated)}</> : 'Precios actualizados dos veces al día'}
           {usingMockData && ' · datos de un snapshot de desarrollo'}
         </p>
         <p>

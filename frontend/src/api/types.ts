@@ -72,6 +72,29 @@ export interface Offer {
 export interface Meta {
   /** Momento del ultimo scraping con datos (ISO 8601). */
   lastUpdated: string
+  /** Juegos de mesa visibles en el catalogo, con o sin stock. */
+  totalGames: number
+  /** Tiendas que se siguen (diarias o manuales; sin las excluidas). */
+  activeStores: number
+}
+
+/**
+ * Un juego cuyo precio bajo en las ultimas 24 horas (pagina de Inicio).
+ * Regla: el ultimo cambio de precio de un listing con stock es una baja de al menos
+ * 5% respecto del precio anterior, tambien con stock (volver a tener stock no cuenta).
+ * Uno por juego (su mayor baja), de mayor a menor, hasta 12.
+ */
+export interface PriceDrop {
+  productId: string
+  productName: string
+  imageUrl: string | null
+  storeName: string
+  listingUrl: string
+  previousPrice: number
+  price: number
+  dropPct: number
+  /** Cuando se detecto la baja (ISO 8601). */
+  changedAt: string
 }
 
 export interface ProductListing {

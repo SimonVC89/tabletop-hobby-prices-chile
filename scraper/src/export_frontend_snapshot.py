@@ -202,6 +202,61 @@ def export_offers(cur):
     return offers
 
 
+# "Bajaron en las ultimas 24 horas" (pagina de Inicio). price_history guarda solo
+# cambios, asi que la ultima fila de un listing ES su ultimo cambio: hay baja si esa
+# fila es reciente, tiene stock, y su precio es menor al de la fila anterior (tambien
+# con stock: un regreso de stock no es una baja).
+PRICE_DROP_WINDOW_HOURS = 24
+PRICE_DROP_MIN_PCT = 5  # el mismo umbral que los avisos de juegos seguidos
+PRICE_DROP_LIMIT = 12
+
+
+def export_price_drops(cur):
+    data = rows(cur, """
+        with ranked as (
+            select ph.listing_id, ph.price_clp, ph.in_stock, ph.scraped_at,
+                   row_number() over (partition by ph.listing_id order by ph.scraped_at desc) as rn
+            from price_history ph
+            join product_listings pl on pl.id = ph.listing_id and pl.is_active
+        )
+        select p.id::text as product_id, p.canonical_name, p.image_url, s.name as store_name, pl.url,
+               prev.price_clp as previous_price, last.price_clp as price, last.scraped_at as changed_at
+        from ranked last
+        join ranked prev on prev.listing_id = last.listing_id and prev.rn = 2
+        join product_listings pl on pl.id = last.listing_id
+        join products p on p.id = pl.product_id
+        join stores s on s.id = pl.store_id and s.active
+        where last.rn = 1
+          and last.scraped_at > now() - make_interval(hours => %s)
+          and last.in_stock and prev.in_stock and last.price_clp < prev.price_clp
+          and p.hidden_at is null and p.merged_into is null and p.category = 'board_game'
+    """, (PRICE_DROP_WINDOW_HOURS,))
+    return select_price_drops(data)
+
+
+def select_price_drops(data, min_pct: float = PRICE_DROP_MIN_PCT, limit: int = PRICE_DROP_LIMIT) -> list[dict]:
+    """De las bajas candidatas, una por juego (la mayor), de al menos min_pct%, de mayor a menor."""
+    best = {}
+    for d in data:
+        pct = round(100 * (d["previous_price"] - d["price"]) / d["previous_price"], 1)
+        if pct < min_pct:
+            continue
+        current = best.get(d["product_id"])
+        if current is None or pct > current["dropPct"]:
+            best[d["product_id"]] = {
+                "productId": d["product_id"],
+                "productName": d["canonical_name"],
+                "imageUrl": d["image_url"],
+                "storeName": d["store_name"],
+                "listingUrl": d["url"],
+                "previousPrice": d["previous_price"],
+                "price": d["price"],
+                "dropPct": pct,
+                "changedAt": d["changed_at"].isoformat(),
+            }
+    return sorted(best.values(), key=lambda x: (-x["dropPct"], x["productName"]))[:limit]
+
+
 def export_details(cur, product_ids):
     products = {p["id"]: p for p in rows(cur, """
         select p.id::text, p.canonical_name, p.image_url, p.description, p.description_source,
@@ -387,10 +442,16 @@ def main():
         with conn.cursor() as cur:
             # Ultimo scraping, no la ultima fila de price_history (que ahora solo guarda cambios).
             cur.execute("select max(last_seen_at) from product_listings")
-            meta = {"lastUpdated": cur.fetchone()[0].isoformat()}
+            last_updated = cur.fetchone()[0].isoformat()
             stores = export_stores(cur)
             products = export_products(cur)
             offers = export_offers(cur)
+            price_drops = export_price_drops(cur)
+            meta = {
+                "lastUpdated": last_updated,
+                "totalGames": len(products),
+                "activeStores": sum(1 for s in stores if s["status"] != "excluded"),
+            }
 
             summaries_by_id = {p["id"]: p for p in products}
             detail_ids = sorted(summaries_by_id)
@@ -403,6 +464,7 @@ def main():
     write(OUT_DIR / "stores.json", stores)
     write(OUT_DIR / "products.json", products)
     write(OUT_DIR / "offers.json", offers)
+    write(OUT_DIR / "price-drops.json", price_drops)
     # Fichas de productos que ya no existen (fusionados u ocultos) no deben sobrevivir.
     for stale in (OUT_DIR / "products").glob("*.json"):
         stale.unlink()
@@ -411,7 +473,7 @@ def main():
 
     in_stock = sum(1 for p in products if p["bestPrice"] is not None)
     print(f"Tiendas: {len(stores)} | Productos: {len(products)} ({in_stock} con stock) | "
-          f"Ofertas: {len(offers)} | Fichas con detalle: {len(details)}")
+          f"Ofertas: {len(offers)} | Bajas 24 h: {len(price_drops)} | Fichas con detalle: {len(details)}")
     print(f"Salida: {OUT_DIR}")
 
 

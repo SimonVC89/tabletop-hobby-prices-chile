@@ -15,6 +15,9 @@ export const useStores = () =>
 export const useOffers = () =>
   useQuery({ queryKey: ['offers'], queryFn: api.getOffers, ...DAY_DATA })
 
+export const usePriceDrops = () =>
+  useQuery({ queryKey: ['price-drops'], queryFn: api.getPriceDrops, ...DAY_DATA })
+
 export const useProducts = (query: ProductQuery) =>
   useQuery({
     queryKey: ['products', query],

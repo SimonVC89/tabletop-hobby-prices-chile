@@ -6,7 +6,18 @@ import { cn } from '@/lib/utils'
  * porque algunas tiendas bloquean imagenes enlazadas desde otro dominio;
  * si igual falla, cae al mosaico de la marca en vez de un icono roto.
  */
-export function ProductImage({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
+export function ProductImage({
+  src,
+  alt,
+  className,
+  imagePadding = 'p-3',
+}: {
+  src: string | null
+  alt: string
+  className?: string
+  /** Aire alrededor de la caja; en miniaturas chicas conviene menos. */
+  imagePadding?: string
+}) {
   const [failed, setFailed] = useState(false)
   const showFallback = !src || failed
 
@@ -21,7 +32,7 @@ export function ProductImage({ src, alt, className }: { src: string | null; alt:
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setFailed(true)}
-          className="size-full object-contain p-3 mix-blend-multiply"
+          className={cn('size-full object-contain mix-blend-multiply', imagePadding)}
         />
       )}
     </div>
