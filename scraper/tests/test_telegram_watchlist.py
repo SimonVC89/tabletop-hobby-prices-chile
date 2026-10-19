@@ -160,6 +160,20 @@ def test_comandos_de_paginacion_invalidos(rest):
     assert parse_more_command(rest) is None
 
 
+@pytest.mark.parametrize(
+    "hour, expected",
+    [
+        (5, "mañana"), (11, "mañana"),
+        (12, "tarde"), (13, "tarde"), (19, "tarde"),   # la corrida de la manana llego a salir a la 1 pm
+        (20, "noche"), (23, "noche"),
+    ],
+)
+def test_saludo_segun_la_hora_de_envio(hour, expected):
+    from src.send_telegram_digest import greeting_for_hour
+
+    assert expected in greeting_for_hour(hour)
+
+
 def test_formato_del_aviso():
     text = format_watch_section(
         [

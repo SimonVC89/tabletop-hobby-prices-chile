@@ -99,14 +99,23 @@ def build_digest_text(offers: list[dict]) -> str | None:
     return "\n\n".join(sections)
 
 
+def greeting_for_hour(hour: int) -> str:
+    """Saludo segun la hora de Chile en que SALE el mensaje, no la de la corrida
+    programada: GitHub atrasa los cron varias horas (la de la manana llego a salir
+    pasado el mediodia), y decir "esta manana" a la 1 pm confunde."""
+    if hour < 12:
+        return "☀️ Resumen de esta mañana"
+    if hour < 20:
+        return "🌆 Resumen de esta tarde"
+    return "🌙 Resumen de esta noche"
+
+
 def period_greeting(conn) -> str:
-    """Encabezado segun la hora de Chile: el resumen sale tras la corrida de la
-    manana o la de la tarde. La hora la da Postgres para no depender de tzdata
-    (que no viene con Python en Windows)."""
+    """Encabezado segun la hora actual de Chile. La hora la da Postgres para no
+    depender de tzdata (que no viene con Python en Windows)."""
     with conn.cursor() as cur:
         cur.execute("select extract(hour from now() at time zone 'America/Santiago')")
-        hour = int(cur.fetchone()[0])
-    return "☀️ Resumen de esta mañana" if hour < 15 else "🌆 Resumen de esta tarde"
+        return greeting_for_hour(int(cur.fetchone()[0]))
 
 
 def mark_offers_as_notified(conn, offers: list[dict]):
