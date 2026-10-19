@@ -94,7 +94,10 @@ export interface ProductDetail {
   id: string
   name: string
   imageUrl: string | null
+  /** Extracto corto (hasta ~300 caracteres) de la descripcion de una tienda. */
   description: string | null
+  /** Tienda de la que salio la descripcion, para citarla; null si no se conoce. */
+  descriptionSource: string | null
   /**
    * Uno por tienda (si una tienda publica el juego en dos paginas, la mas
    * barata con stock). Ordenados de menor a mayor precio.

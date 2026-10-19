@@ -64,9 +64,7 @@ export function ProductPage() {
         <div className="min-w-0">
           <h1 className="text-2xl leading-tight font-bold text-balance sm:text-3xl">{detail.name}</h1>
           <BestPriceCard detail={detail} />
-          {hasRealDescription(detail) && (
-            <p className="mt-6 leading-relaxed text-pretty text-muted-foreground">{detail.description}</p>
-          )}
+          {hasRealDescription(detail) && <Description detail={detail} />}
         </div>
       </div>
 
@@ -125,6 +123,35 @@ function hasRealDescription({ name, description }: ProductDetail) {
   if (!description) return false
   const d = simplify(description)
   return !(d.length < 60 && d.includes(simplify(name)))
+}
+
+/** Extracto de la descripcion de una tienda, citando la fuente con un enlace a su pagina. */
+function Description({ detail }: { detail: ProductDetail }) {
+  const source = detail.descriptionSource
+  const sourceListing = source ? detail.listings.find((l) => l.storeName === source) : undefined
+
+  return (
+    <div className="mt-6">
+      <p className="leading-relaxed text-pretty text-muted-foreground">{detail.description}</p>
+      {source && (
+        <p className="mt-2 text-xs text-muted-foreground/80">
+          Descripción de{' '}
+          {sourceListing ? (
+            <a
+              href={sourceListing.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-4 hover:text-foreground"
+            >
+              {source}
+            </a>
+          ) : (
+            source
+          )}
+        </p>
+      )}
+    </div>
+  )
 }
 
 /** Vuelve a la pagina anterior si se llego navegando; si no, a las ofertas. */
