@@ -1,22 +1,12 @@
-"""El aviso de demora del bot y los limites de su perfil publico."""
+"""Perfil publico del bot: limites de Telegram y menu de comandos."""
 
 from src import setup_bot_profile as profile
-from src.telegram_subscribers import DELAY_NOTICE, HELP_TEXT
 
 
-def test_el_aviso_de_demora_dice_horas_y_no_minutos():
-    assert "varias horas" in DELAY_NOTICE
-    assert "15 minutos" not in DELAY_NOTICE
-
-
-def test_la_ayuda_incluye_el_aviso():
-    assert DELAY_NOTICE in HELP_TEXT
-
-
-def test_la_descripcion_visible_antes_de_iniciar_avisa_de_la_demora():
-    """Es lo unico que se lee antes de esperar una respuesta."""
-    assert "demora" in profile.DESCRIPTION and "horas" in profile.DESCRIPTION
-    assert "demora" in profile.SHORT_DESCRIPTION.lower()
+def test_la_descripcion_ya_no_avisa_de_demora():
+    """Con el webhook las respuestas son inmediatas: el aviso de horas de demora seria falso."""
+    assert "demora" not in profile.DESCRIPTION.lower()
+    assert "demora" not in profile.SHORT_DESCRIPTION.lower()
 
 
 def test_los_textos_del_perfil_respetan_los_limites_de_telegram():

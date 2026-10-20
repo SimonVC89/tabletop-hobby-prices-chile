@@ -1,7 +1,8 @@
-"""Cliente minimo de la API de Telegram Bot.
+"""Cliente minimo de la API de Telegram Bot: solo sendMessage.
 
-Sin libreria de terceros (python-telegram-bot, etc.) porque solo
-necesitamos 2 llamadas: getUpdates (polling) y sendMessage.
+Sin libreria de terceros (python-telegram-bot, etc.). Los comandos del bot los
+recibe la API (webhook, backend/.../telegram); desde aqui solo se envian el
+resumen de ofertas y los avisos.
 """
 
 import os
@@ -13,17 +14,6 @@ API_BASE = "https://api.telegram.org"
 
 def _token() -> str:
     return os.environ["TELEGRAM_BOT_TOKEN"]
-
-
-def get_updates(offset: int | None = None, timeout: int = 10) -> list[dict]:
-    params = {"timeout": timeout}
-    if offset is not None:
-        params["offset"] = offset
-
-    response = requests.get(f"{API_BASE}/bot{_token()}/getUpdates", params=params, timeout=timeout + 10)
-    response.raise_for_status()
-    data = response.json()
-    return data.get("result", [])
 
 
 def send_message(chat_id: str, text: str) -> dict:

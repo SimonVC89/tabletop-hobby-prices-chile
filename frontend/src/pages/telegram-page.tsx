@@ -1,4 +1,4 @@
-import { Bell, Hourglass, ShieldCheck, Star } from 'lucide-react'
+import { Bell, ShieldCheck, Star } from 'lucide-react'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 
@@ -10,7 +10,7 @@ const COMMANDS = [
   { command: '/seguir catan', text: 'Buscar un juego y seguirlo. Toca la opción que quieras: no hace falta escribir el nombre completo.' },
   { command: '/siguiendo', text: 'Ver los juegos que sigues (hasta 20).' },
   { command: '/stop', text: 'Pausar el resumen de ofertas. Tus juegos seguidos se mantienen.' },
-  { command: '/dar_de_baja', text: 'Baja total y permanente: detiene todos los avisos y borra tu lista.' },
+  { command: '/dar_de_baja', text: 'Baja total y permanente: detiene todos los avisos y borra tu lista. Por ahora no se puede reactivar.' },
   { command: '/ayuda', text: 'Ver los comandos y cómo funciona.' },
 ]
 
@@ -37,8 +37,6 @@ export function TelegramPage() {
           </a>
         </Button>
       </header>
-
-      <Callout />
 
       <section aria-labelledby="que-recibes" className="mt-12">
         <h2 id="que-recibes" className="text-xl font-bold">
@@ -132,29 +130,6 @@ export function TelegramPage() {
         </p>
       </section>
     </div>
-  )
-}
-
-/** El aviso de demora va arriba y bien visible: si no se avisa, un bot lento parece roto. */
-function Callout() {
-  return (
-    <aside
-      aria-labelledby="demora"
-      className="mt-8 flex max-w-3xl gap-3 rounded-lg border border-highlight/40 bg-card p-4"
-    >
-      <Hourglass className="mt-0.5 size-5 shrink-0 text-highlight" aria-hidden="true" />
-      <div>
-        <h2 id="demora" className="text-base font-semibold">
-          El bot responde con demora
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Todavía no tiene un servidor propio: lee los mensajes en revisiones programadas, y{' '}
-          <strong className="font-medium text-foreground">puede tardar varias horas</strong> en responder a un comando (a veces menos).
-          Los avisos de ofertas y de tus juegos no sufren esa demora: salen después de cada actualización de precios. Es una limitación
-          temporal. Gracias por la paciencia.
-        </p>
-      </div>
-    </aside>
   )
 }
 

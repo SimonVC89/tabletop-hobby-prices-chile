@@ -1,12 +1,18 @@
-name: Poll Telegram bot commands
+name: Alert about stale manual stores
 
+# Aviso solo al mantenedor cuando una tienda de actualizacion manual (UpDown) esta
+# por cumplir el plazo de 72 h sin actualizarse (24, 12 y 2 h antes).
+#
+# Antes este workflow tambien leia los comandos del bot (getUpdates); desde que la
+# API recibe los mensajes por webhook eso ya no corre aqui (y Telegram no permite
+# getUpdates con un webhook activo).
 on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 jobs:
-  poll:
+  alert:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,18 +29,9 @@ jobs:
           cache: "pip"
           cache-dependency-path: scraper/requirements.txt
 
-      # Solo las dependencias minimas que usa este script (no todo
-      # requirements.txt): esto corre seguido (programado cada 15 min), no tiene sentido
-      # instalar sentence-transformers/torch en cada corrida.
+      # Solo las dependencias minimas del script (no todo requirements.txt).
       - name: Install dependencies
         run: pip install requests==2.32.3 python-dotenv==1.0.1 psycopg2-binary==2.9.10
 
-      - name: Poll Telegram commands
-        run: python -m src.poll_telegram_commands
-
-      # Aviso solo al mantenedor cuando una tienda de actualizacion manual
-      # (UpDown) esta por cumplir el plazo de 72 h. Va aparte del polling para
-      # que un fallo del bot no impida el aviso, y al reves.
       - name: Alert about stale manual stores
-        if: always()
         run: python -m src.alert_manual_stores

@@ -10,8 +10,9 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     hikari:
-      # El plan gratuito de Supabase limita las conexiones; la API es casi toda lectura.
-      maximum-pool-size: 5
+      # thpc_api tiene un limite de 10 conexiones. Con 3 por instancia, un deploy (version
+      # vieja + nueva = 6) deja margen; el catalogo vive en memoria, asi que 3 sobran.
+      maximum-pool-size: 3
   jpa:
     # El esquema lo definen las migraciones de supabase/migrations: Hibernate solo
     # comprueba que las entidades calcen con las tablas, nunca las crea ni altera.

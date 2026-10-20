@@ -5,11 +5,10 @@
 
 Se corre a mano cuando cambian estos textos; no forma parte del cron.
 
-Lo importante es la descripcion: Telegram la muestra en el chat vacio, ANTES de que la
-persona toque "Iniciar", y es el unico lugar donde se puede avisar de la demora de
-respuesta (los comandos se leen cada varias horas, ver telegram_subscribers.DELAY_NOTICE)
-antes de que alguien se quede esperando una respuesta. El menu de comandos es lo que
-aparece al escribir "/", y sirve de autocompletado de los nombres de comando.
+La descripcion es lo primero que se ve: Telegram la muestra en el chat vacio, ANTES de
+que la persona toque "Iniciar". El menu de comandos es lo que aparece al escribir "/",
+y sirve de autocompletado de los nombres de comando. Desde que la API recibe los
+mensajes por webhook las respuestas son inmediatas, asi que ya no hay aviso de demora.
 """
 
 import argparse
@@ -28,12 +27,11 @@ SHORT_DESCRIPTION_MAX = 120
 DESCRIPTION = (
     "Te aviso cuando un juego de mesa baja de precio en tiendas chilenas, y sigo los juegos que tú "
     "elijas con /seguir.\n\n"
-    "⏳ Ojo: respondo con demora. Todavía no tengo servidor propio, así que leo tus comandos cada "
-    "cierto tiempo y puedo tardar varias horas (a veces menos). Los avisos de ofertas salen después "
-    "de cada actualización de precios, sin esa demora.\n\n"
-    "Toca Iniciar y ten paciencia 🙂"
+    "Recibes un resumen en la mañana y en la tarde, solo cuando hay ofertas nuevas, y un aviso cuando "
+    "un juego que sigues baja de precio o vuelve a tener stock.\n\n"
+    "Toca Iniciar para empezar."
 )
-SHORT_DESCRIPTION = "Ofertas de juegos de mesa en Chile y seguimiento de tus juegos. ⏳ Responde con demora (horas)."
+SHORT_DESCRIPTION = "Ofertas de juegos de mesa en Chile y aviso cuando bajan los juegos que sigues."
 
 COMMANDS = [
     ("start", "Recibir el resumen de ofertas"),

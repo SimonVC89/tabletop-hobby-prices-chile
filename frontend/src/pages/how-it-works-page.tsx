@@ -64,13 +64,13 @@ const STACK = [
   },
   {
     area: 'API',
-    tech: 'Spring Boot (en construcción)',
-    why: 'Por ahora la web lee un snapshot JSON con el mismo contrato que tendrá la API, para cambiar una por otra sin tocar las pantallas.',
+    tech: 'Spring Boot · Java 21 · Docker en Render',
+    why: 'La web y el bot leen de la misma API, con un usuario de base de datos que no puede modificar los precios.',
   },
   {
     area: 'Avisos',
-    tech: 'Bot de Telegram',
-    why: 'Resumen de ofertas nuevas y seguimiento de hasta 20 juegos por persona, sin cuentas ni contraseñas.',
+    tech: 'Bot de Telegram (webhook)',
+    why: 'Telegram le pasa cada mensaje a la API y el bot responde en segundos. Resumen de ofertas y seguimiento de hasta 20 juegos por persona, sin cuentas ni contraseñas.',
   },
   {
     area: 'Calidad',
@@ -213,8 +213,7 @@ export function HowItWorksPage() {
             No todos los juegos tienen descripción: se toma de la página de una tienda, y no todas la publican.
           </Limitation>
           <Limitation>
-            El bot de Telegram todavía no tiene servidor propio y puede tardar horas en responder un comando. Los avisos de
-            ofertas sí salen después de cada actualización.
+            La API corre en un plan gratuito: si se reinicia, la primera respuesta puede tardar cerca de un minuto.
           </Limitation>
         </ul>
       </Section>

@@ -38,9 +38,9 @@ GitHub Actions (cron, 2 veces al día)
                                                    | lee (usuario de solo lectura)
                                                    v
                                   API REST (Spring Boot, Docker en Render)
-                                                   |
-                                                   v
-                                     frontend (React, Vercel)
+                                         |                    ^
+                                         v                    | webhook (comandos del bot)
+                             frontend (React, Vercel)      Telegram
 ```
 
 El scraper se conecta directo a Postgres (no vía la Data API de Supabase):
@@ -77,10 +77,10 @@ credenciales se filtraran, no servirían para modificar ni borrar datos.
 - Bot de Telegram (`/start`, `/stop`, `/seguir`, `/siguiendo`, `/dar_de_baja`,
   `/ayuda`): resumen de ofertas (destacadas 50%+ y regulares 20%+ bajo la
   mediana) y avisos de los juegos que cada persona sigue (bajan de precio o
-  vuelven a tener stock). **Limitación conocida:** al no haber servidor, los
-  comandos se leen con un workflow programado de GitHub Actions que en la
-  práctica corre cada ~3 horas (mediana medida), así que las respuestas no son
-  inmediatas. Se resuelve con un webhook cuando exista el backend.
+  vuelven a tener stock). Los comandos llegan por webhook a la API, que responde
+  en segundos (antes se leían con un workflow programado que en la práctica
+  corría cada ~3 horas); el resumen y los avisos salen desde Python después de
+  cada corrida del scraper.
 - API REST en Spring Boot 4 (Java 21) con el mismo contrato que consume el
   frontend (`frontend/src/api/types.ts`): ofertas, búsqueda paginada,
   ficha, historial diario reconstruido y juegos relacionados (similitud de
@@ -109,7 +109,7 @@ credenciales se filtraran, no servirían para modificar ni borrar datos.
       corrida del cron
 - [x] Bot de Telegram con resumen diario de ofertas, suscripción abierta y
       polling de comandos (sin servidor persistente)
-- [ ] Webhook de Telegram en el backend, para que el bot responda en segundos
+- [x] Webhook de Telegram en el backend, para que el bot responda en segundos
 - [x] Política de retención: poda de `price_history` (8 meses) y soft-delete
       de productos descontinuados (6 meses sin listings activos)
 - [ ] CI/CD por carpeta para `backend/` y `frontend/` (tests/build en PRs)
