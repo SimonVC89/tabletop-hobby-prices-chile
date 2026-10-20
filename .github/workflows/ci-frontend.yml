@@ -1,0 +1,42 @@
+name: CI frontend
+
+# Linter, tipos y build del frontend en cada cambio de frontend/ (push a main o PR).
+# Vercel publica por su cuenta; esto avisa si un cambio rompe el build antes de verlo
+# fallar alla.
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", ".github/workflows/ci-frontend.yml"]
+  pull_request:
+    paths: ["frontend/**", ".github/workflows/ci-frontend.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Linter
+        run: npm run lint
+
+      # Incluye tsc -b (chequeo de tipos) antes de vite build.
+      - name: Build
+        run: npm run build

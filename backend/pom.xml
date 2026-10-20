@@ -53,6 +53,27 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- Mockito como agente de Java en las pruebas: cargarlo en caliente esta
+                 deprecado y las versiones futuras del JDK lo van a bloquear. El goal
+                 "properties" expone la ruta del jar como ${org.mockito:mockito-core:jar}. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
