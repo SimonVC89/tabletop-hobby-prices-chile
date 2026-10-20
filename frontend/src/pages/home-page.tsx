@@ -19,6 +19,9 @@ const DROPS_SHOWN = 8
 export function HomePage() {
   const { data: meta } = useMeta()
   const { data: offers, isPending: offersPending } = useOffers()
+  // Juegos en oferta, no ofertas: un juego en oferta en dos tiendas cuenta una vez,
+  // igual que en la pagina de Ofertas.
+  const gamesOnSale = offers && gameCount(offers)
 
   return (
     <div className="space-y-16 sm:space-y-20">
@@ -38,7 +41,7 @@ export function HomePage() {
           <dl className="mt-8 grid max-w-md grid-cols-3 gap-3">
             <Stat label="juegos" value={meta && formatCount(meta.totalGames)} />
             <Stat label="tiendas" value={meta && formatCount(meta.activeStores)} />
-            <Stat label="ofertas hoy" value={offers && formatCount(offers.length)} />
+            <Stat label="ofertas hoy" value={gamesOnSale !== undefined ? formatCount(gamesOnSale) : undefined} />
           </dl>
 
           <HomeSearch />
@@ -67,6 +70,10 @@ export function HomePage() {
       </section>
     </div>
   )
+}
+
+function gameCount(offers: Offer[]) {
+  return new Set(offers.map((o) => o.productId)).size
 }
 
 function Stat({ label, value }: { label: string; value: string | undefined | null }) {
@@ -139,7 +146,7 @@ function OfferBoard({ offers, pending }: { offers: Offer[] | undefined; pending:
         </h2>
         {offers && (
           <Link to="/ofertas" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
-            Ver las {offers.length} <ArrowRight className="size-4" aria-hidden="true" />
+            Ver las {gameCount(offers)} <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         )}
       </div>
