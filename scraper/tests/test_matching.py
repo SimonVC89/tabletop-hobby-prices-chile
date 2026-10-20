@@ -1,8 +1,10 @@
-"""Normalizacion de titulos, deteccion de duplicados y sagas."""
+"""Normalizacion de titulos y deteccion de duplicados.
+
+La clave de saga de "juegos relacionados" se prueba en el backend (SimilarProductsTest.java).
+"""
 
 import pytest
 
-from src.export_frontend_snapshot import family_key
 from src.matching.find_duplicates import core_key, plausible_pair
 from src.matching.normalize import build_match_key
 
@@ -72,21 +74,3 @@ def test_pares_que_no_se_fusionan(a, b):
 )
 def test_pares_que_si_se_fusionan(a, b):
     assert pair(a, b)
-
-
-@pytest.mark.parametrize(
-    "name, expected",
-    [
-        ("Catan Junior", "catan"),
-        ("Catán: Navegantes", "catan"),
-        ("El Señor de los Anillos LCG", "senor"),
-        ("7 Wonders Duel", "7 wonders"),
-        ("Ark Nova", "ark nova"),
-        ("Star Realms: Escenarios", "star realms"),   # prefijo ambiguo: dos palabras
-        ("Star Wars Rivals", "star wars"),
-        ("Juego de dados clásico", None),             # primera palabra generica
-        ("Pack de cartas", None),
-    ],
-)
-def test_clave_de_saga(name, expected):
-    assert family_key(name) == expected

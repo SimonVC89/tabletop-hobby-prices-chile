@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Agregados del catalogo en SQL nativo: no son entidades, son conteos y maximos.
- * Mismas reglas que scraper/src/export_frontend_snapshot.py.
+ * Los usa /api/meta; el frontend los muestra en Inicio y en el pie.
  */
 @Repository
 public class MetaQueries {

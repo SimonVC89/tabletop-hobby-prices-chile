@@ -14,7 +14,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Consultas de productos en SQL nativo; mismas consultas que scraper/src/export_frontend_snapshot.py. */
+/** Consultas de productos en SQL nativo: catalogo, ficha, historial y similitud de titulos. */
 @Repository
 @Transactional(readOnly = true)
 @SuppressWarnings("unchecked") // createNativeQuery devuelve listas sin tipo

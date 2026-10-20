@@ -3,8 +3,8 @@ package io.github.simonvc89.thpc.offer;
 import java.util.OptionalDouble;
 
 /**
- * Reglas de oferta, las mismas del snapshot y del bot de Telegram
- * (scraper/src/export_frontend_snapshot.py y send_telegram_digest.py).
+ * Reglas de oferta. El resumen de ofertas del bot de Telegram usa las mismas
+ * (scraper/src/send_telegram_digest.py): si cambian aqui, hay que cambiarlas alla.
  */
 public final class OfferRules {
 

@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 /**
  * Juegos relacionados: de la misma saga o con titulo casi identico, solo con stock.
- * Misma regla que compute_similar en scraper/src/export_frontend_snapshot.py.
  *
  * <p>Los embeddings son de TITULOS: captan sagas y nombres parecidos, no mecanicas
  * (a Azul le salian "Bluey"). Por eso solo entran juegos de la misma saga con un

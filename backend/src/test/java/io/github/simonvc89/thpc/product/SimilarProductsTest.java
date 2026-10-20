@@ -5,25 +5,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class SimilarProductsTest {
 
-    @Test
-    void laSagaEsLaPrimeraPalabraSinTildes() {
-        assertThat(SimilarProducts.familyKey("Catán Junior")).isEqualTo("catan");
-        assertThat(SimilarProducts.familyKey("El Señor de los Anillos")).isEqualTo("senor");
+    // Los mismos casos que tenia scraper/tests/test_matching.py (test_clave_de_saga).
+    @ParameterizedTest
+    @CsvSource({
+            "Catan Junior, catan",
+            "'Catán: Navegantes', catan",
+            "El Señor de los Anillos LCG, senor",
+            "7 Wonders Duel, 7 wonders",
+            "Ark Nova, ark nova",
+            "'Star Realms: Escenarios', star realms",  // prefijo ambiguo: dos palabras
+            "Star Wars Rivals, star wars",
+    })
+    void laSagaEsElInicioDelNombre(String name, String expected) {
+        assertThat(SimilarProducts.familyKey(name)).isEqualTo(expected);
     }
 
-    @Test
-    void palabrasCortasOAmbiguasUsanDosPalabras() {
-        assertThat(SimilarProducts.familyKey("7 Wonders Duel")).isEqualTo("7 wonders");
-        assertThat(SimilarProducts.familyKey("Star Realms")).isEqualTo("star realms");
-    }
-
-    @Test
-    void sinSagaSiElNombreEmpiezaConUnaPalabraGenerica() {
-        assertThat(SimilarProducts.familyKey("Juego de Tronos")).isNull();
-        assertThat(SimilarProducts.familyKey("Pack de Dados")).isNull();
+    @ParameterizedTest
+    @ValueSource(strings = {"Juego de dados clásico", "Pack de cartas", "Juego de Tronos"})
+    void sinSagaSiElNombreEmpiezaConUnaPalabraGenerica(String name) {
+        assertThat(SimilarProducts.familyKey(name)).isNull();
     }
 
     private static ProductSummary game(String name, boolean inStock) {

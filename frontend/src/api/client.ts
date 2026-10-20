@@ -13,8 +13,9 @@ import type {
 /*
  * Dos implementaciones del mismo contrato:
  * - httpApi: el backend real (cuando exista), activado con VITE_API_URL.
- * - mockApi: snapshot JSON en /mock/ (python -m src.export_frontend_snapshot),
- *   que replica en el cliente el filtrado/orden/paginacion que hara el server.
+ * - mockApi: respuestas de la API grabadas en JSON (npm run mock:record o la muestra
+ *   versionada de mock:sample), que replica en el cliente el filtrado/orden/paginacion
+ *   que hace el server.
  * Las pantallas solo conocen `api`, asi que cambiar de una a otra no las toca.
  */
 export interface Api {
@@ -28,9 +29,8 @@ export interface Api {
   getPriceHistory(id: string): Promise<PriceHistory>
   /**
    * Juegos relacionados (hasta 6), solo los que hoy tienen stock. Regla del
-   * snapshot (scraper/src/export_frontend_snapshot.py, compute_similar), que
-   * el backend debe replicar: misma saga (primera palabra del nombre) con
-   * similitud de embedding >= 0.60, o similitud >= 0.78; la saga va primero.
+   * backend (SimilarProducts.java): misma saga (primera palabra del nombre) con
+   * similitud de embedding >= 0.45, o similitud >= 0.78; la saga va primero.
    * Los embeddings son de titulos: captan sagas, no mecanicas de juego.
    */
   getSimilarProducts(id: string): Promise<ProductSummary[]>
@@ -133,17 +133,27 @@ function createMockApi(): Api {
   let products: Promise<ProductSummary[]> | undefined
   const files = new Map<string, Promise<MockProductFile>>()
 
-  const allProducts = () => (products ??= getJson<ProductSummary[]>('/mock/products.json'))
+  // La copia completa (/mock/, npm run mock:record) no se versiona; si no esta, como
+  // recien clonado el repo, se usa la muestra versionada (/mock-sample/).
+  let base: Promise<string> | undefined
+  const mockBase = () =>
+    (base ??= getJson('/mock/meta.json').then(
+      () => '/mock',
+      () => '/mock-sample',
+    ))
+  const mock = async <T,>(file: string) => getJson<T>(`${await mockBase()}/${file}`)
+
+  const allProducts = () => (products ??= mock<ProductSummary[]>('products.json'))
   const productFile = (id: string) => {
-    if (!files.has(id)) files.set(id, getJson<MockProductFile>(`/mock/products/${id}.json`))
+    if (!files.has(id)) files.set(id, mock<MockProductFile>(`products/${id}.json`))
     return files.get(id)!
   }
 
   return {
-    getMeta: () => getJson('/mock/meta.json'),
-    getStores: () => getJson('/mock/stores.json'),
-    getOffers: () => getJson('/mock/offers.json'),
-    getPriceDrops: () => getJson('/mock/price-drops.json'),
+    getMeta: () => mock('meta.json'),
+    getStores: () => mock('stores.json'),
+    getOffers: () => mock('offers.json'),
+    getPriceDrops: () => mock('price-drops.json'),
 
     async getProducts(query = {}) {
       const {

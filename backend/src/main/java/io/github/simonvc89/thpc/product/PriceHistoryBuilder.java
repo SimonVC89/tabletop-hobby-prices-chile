@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * Arma el historial diario de un juego a partir de price_history, que guarda solo
- * cambios. Misma logica que export_details en scraper/src/export_frontend_snapshot.py.
+ * cambios (scraper/src/db.py, insert_price_history).
  *
  * <p>El estado de un listing vale desde su fila hasta el dia anterior a la siguiente,
  * y la ultima fila hasta la ultima vez que la tienda mostro el listing (o hasta el

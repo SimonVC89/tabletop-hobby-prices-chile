@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Elige que bajas mostrar en "Bajaron en las ultimas 24 horas". Misma regla que
- * select_price_drops en scraper/src/export_frontend_snapshot.py.
+ * Elige que bajas mostrar en "Bajaron en las ultimas 24 horas" (pagina de Inicio).
  */
 public final class PriceDropSelector {
 

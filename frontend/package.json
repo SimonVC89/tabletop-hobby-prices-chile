@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "vite --mode api",
+    "mock:record": "node scripts/record-mock.mjs",
+    "mock:sample": "node scripts/record-mock.mjs --sample 60",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
