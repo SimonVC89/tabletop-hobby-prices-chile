@@ -28,3 +28,9 @@ services:
       # Dominio del frontend en Vercel, por ejemplo https://thpc.vercel.app
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      # Bot de Telegram (webhook): el token de BotFather y el secreto que se registra con
+      # src/set_telegram_webhook.py (el mismo en los dos lados).
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
