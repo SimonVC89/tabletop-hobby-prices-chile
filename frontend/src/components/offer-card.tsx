@@ -9,7 +9,11 @@ import { useIsTruncated } from '@/hooks/use-is-truncated'
 import { formatCLP, formatPct } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-export function OfferCard({ offer }: { offer: Offer }) {
+/**
+ * @param others ofertas del mismo juego en otras tiendas (la pagina muestra una tarjeta
+ *               por juego, con la mejor oferta arriba)
+ */
+export function OfferCard({ offer, others = [] }: { offer: Offer; others?: Offer[] }) {
   const nameRef = useRef<HTMLHeadingElement>(null)
   const truncated = useIsTruncated(nameRef)
   const destacada = offer.tier === 'destacada'
@@ -65,6 +69,26 @@ export function OfferCard({ offer }: { offer: Offer }) {
           max={offer.maxPrice}
           storeCount={offer.storeCount}
         />
+
+        {others.length > 0 && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            También en oferta:{' '}
+            {others.map((o, i) => (
+              <span key={o.storeName}>
+                {i > 0 && ', '}
+                <a
+                  href={o.listingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                >
+                  {o.storeName}
+                </a>{' '}
+                <span className="price">{formatCLP(o.price)}</span> (−{formatPct(o.discountPct)})
+              </span>
+            ))}
+          </p>
+        )}
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
           <span className="text-xs text-muted-foreground">Comparado en {offer.storeCount} tiendas</span>

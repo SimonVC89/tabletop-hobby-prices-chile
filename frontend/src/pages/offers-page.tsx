@@ -41,16 +41,31 @@ export function OffersPage() {
       .map((s) => ({ name: s.name, count: counts.get(s.name) ?? 0 }))
       .sort((a, b) => a.name.localeCompare(b.name, 'es'))
   }, [allStores, offers])
-  const destacadasCount = offers?.filter((o) => o.tier === 'destacada').length ?? 0
+  // Los contadores cuentan juegos, no ofertas: un juego en oferta en dos tiendas es uno.
+  const gamesCount = new Set(offers?.map((o) => o.productId)).size
+  const destacadasCount = new Set(offers?.filter((o) => o.tier === 'destacada').map((o) => o.productId)).size
 
-  const visible = useMemo(
-    () =>
-      (offers ?? [])
-        .filter((o) => tier === 'todas' || o.tier === 'destacada')
-        .filter((o) => !store || o.storeName === store)
-        .sort(SORTERS[sort]),
-    [offers, tier, store, sort],
-  )
+  // Una tarjeta por juego. La API entrega una oferta por tienda; si dos tiendas tienen
+  // el mismo juego en oferta, la tarjeta muestra la mejor segun el orden elegido (o la
+  // de la tienda filtrada) y las demas como "tambien en oferta".
+  const visible = useMemo(() => {
+    const byGame = new Map<string, Offer[]>()
+    for (const o of offers ?? []) byGame.set(o.productId, [...(byGame.get(o.productId) ?? []), o])
+
+    const groups: { main: Offer; others: Offer[] }[] = []
+    const seen = new Set<string>()
+    const candidates = (offers ?? [])
+      .filter((o) => tier === 'todas' || o.tier === 'destacada')
+      .filter((o) => !store || o.storeName === store)
+      .sort(SORTERS[sort])
+    for (const main of candidates) {
+      if (seen.has(main.productId)) continue
+      seen.add(main.productId)
+      const others = byGame.get(main.productId)!.filter((o) => o !== main).sort(SORTERS.precio)
+      groups.push({ main, others })
+    }
+    return groups
+  }, [offers, tier, store, sort])
 
   return (
     <div>
@@ -67,7 +82,7 @@ export function OffersPage() {
         <div role="group" aria-label="Tipo de oferta" className="inline-flex rounded-lg border p-1">
           {(
             [
-              ['todas', `Todas${offers ? ` (${offers.length})` : ''}`],
+              ['todas', `Todas${offers ? ` (${gamesCount})` : ''}`],
               ['destacadas', `Destacadas (${destacadasCount})`],
             ] as const
           ).map(([value, label]) => (
@@ -131,8 +146,8 @@ export function OffersPage() {
 
         {visible.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((offer) => (
-              <OfferCard key={`${offer.productId}-${offer.storeName}`} offer={offer} />
+            {visible.map(({ main, others }) => (
+              <OfferCard key={main.productId} offer={main} others={others} />
             ))}
           </div>
         )}
