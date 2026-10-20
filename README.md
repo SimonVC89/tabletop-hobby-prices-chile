@@ -5,6 +5,8 @@ es detectar ofertas reales por **asimetría de información** entre tiendas
 (una tienda que no actualiza su precio según la referencia real de mercado),
 no errores de tipeo puntuales.
 
+**Sitio:** https://thpc.vercel.app · **API:** https://thpc-api.onrender.com/api/meta
+
 ## Motivación
 
 Proyecto personal, nacido de una colección de +50 juegos de mesa y las ganas
@@ -30,23 +32,23 @@ servicio comercial.
 ## Arquitectura
 
 ```
-scrapers (Python) --> Supabase (Postgres + pgvector)
-                           |
-                           v
-                  matching (match_key determinístico
-                   + embeddings como capa secundaria)
-                           |
-                           v
-                  backend API (Spring Boot, Render)
-                      /          \
-                     v            v
-         frontend (React, Vercel)   alertas (Telegram)
+GitHub Actions (cron, 2 veces al día)
+  scrapers + matching (Python) --escribe--> Supabase (Postgres + pgvector)
+  resumen y avisos (Telegram)  <--lee-----/        |
+                                                   | lee (usuario de solo lectura)
+                                                   v
+                                  API REST (Spring Boot, Docker en Render)
+                                                   |
+                                                   v
+                                     frontend (React, Vercel)
 ```
 
 El scraper se conecta directo a Postgres (no vía la Data API de Supabase):
 las tablas quedaron deliberadamente sin exponer por REST, así que tanto el
 scraper como el backend hablan directo con la base, como dos servicios
-internos — no hay superficie pública adicional que proteger.
+internos — no hay superficie pública adicional que proteger. La API usa un
+rol propio (`thpc_api`) que solo puede leer las tablas que necesita: si sus
+credenciales se filtraran, no servirían para modificar ni borrar datos.
 
 ## Estado actual
 
@@ -79,6 +81,13 @@ internos — no hay superficie pública adicional que proteger.
   comandos se leen con un workflow programado de GitHub Actions que en la
   práctica corre cada ~3 horas (mediana medida), así que las respuestas no son
   inmediatas. Se resuelve con un webhook cuando exista el backend.
+- API REST en Spring Boot 4 (Java 21) con el mismo contrato que consume el
+  frontend (`frontend/src/api/types.ts`): ofertas, búsqueda paginada,
+  ficha, historial diario reconstruido y juegos relacionados (similitud de
+  pgvector). Publicada en Render con Docker; un ping periódico evita que el
+  plan gratuito la duerma.
+- Frontend en React publicado en Vercel: Inicio, ofertas, buscador, ficha
+  con gráfico de historial por tienda, página del bot y "Cómo funciona".
 - Política de retención de datos: `price_history` se poda a 8 meses, y un
   producto sin ningún listing activo hace 6+ meses se oculta (soft-delete,
   reversible si vuelve a aparecer).
@@ -88,8 +97,9 @@ internos — no hay superficie pública adicional que proteger.
 
 ## Roadmap
 
-- [ ] Dockerización (scraper + backend) con `docker-compose` para desarrollo local
-- [ ] Tests (`pytest` para el scraper/matching, JUnit para el backend)
+- [x] Imagen Docker del backend (con CDS para arrancar rápido en el plan gratuito)
+- [ ] `docker-compose` para levantar todo en local
+- [x] Tests (`pytest` para el scraper/matching, JUnit para el backend)
 - [ ] Logging estructurado (reemplazar `print()`)
 - [ ] Validación de datos con Pydantic en el scraper
 - [x] Reintentos con backoff exponencial en requests HTTP
@@ -98,12 +108,14 @@ internos — no hay superficie pública adicional que proteger.
       precio de referencia por mediana entre tiendas, refrescadas en cada
       corrida del cron
 - [x] Bot de Telegram con resumen diario de ofertas, suscripción abierta y
-      polling de comandos (sin servidor persistente, ver memoria del proyecto)
+      polling de comandos (sin servidor persistente)
+- [ ] Webhook de Telegram en el backend, para que el bot responda en segundos
 - [x] Política de retención: poda de `price_history` (8 meses) y soft-delete
       de productos descontinuados (6 meses sin listings activos)
 - [ ] CI/CD por carpeta para `backend/` y `frontend/` (tests/build en PRs)
-- [ ] Backend: API REST con DTOs, paginación, cache y documentación OpenAPI/Swagger
-- [ ] Frontend con gráficos de precio histórico (Recharts)
+- [x] Backend: API REST con DTOs, paginación y caché del catálogo
+- [ ] Documentación OpenAPI/Swagger de la API
+- [x] Frontend con gráficos de precio histórico (Recharts)
 - [ ] Sub-categorización de juegos de mesa (familiar/estrategia/party, etc.) —
       cada tienda usa su propia taxonomía, sin estándar compartido entre ellas
 - [ ] Reactivar MTG (singles vía Scryfall, sellado vía matching propio)
