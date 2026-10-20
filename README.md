@@ -21,7 +21,7 @@ Chile puedan revisarlo, usarlo o adaptarlo a su propio stack.
 | Scraping | Python (Requests + BeautifulSoup) |
 | Matching de productos | Normalización determinística + embeddings (sentence-transformers, local) |
 | Base de datos | Supabase (Postgres + pgvector) |
-| Automatización | GitHub Actions (cron) |
+| Automatización | GitHub Actions, lanzado a la hora exacta por cron-job.org |
 | Backend | Spring Boot (Java), desplegado en Render |
 | Frontend | React + TypeScript + Vite, desplegado en Vercel |
 | Alertas | Bot de Telegram |
@@ -32,7 +32,7 @@ servicio comercial.
 ## Arquitectura
 
 ```
-GitHub Actions (cron, 2 veces al día)
+GitHub Actions (05:17 y 19:17, lanzado por cron-job.org)
   scrapers + matching (Python) --escribe--> Supabase (Postgres + pgvector)
   resumen y avisos (Telegram)  <--lee-----/        |
                                                    | lee (usuario de solo lectura)
@@ -71,9 +71,11 @@ credenciales se filtraran, no servirían para modificar ni borrar datos.
 - ~3.000 juegos de mesa comprables hoy, ~1.060 comparables en 2+ tiendas
   (con stock) y ~570 con mediana confiable (3+ tiendas). Cada producto tiene imagen y descripción corta, extraídas del
   propio HTML scrapeado (sin depender de ninguna API externa).
-- Dos corridas diarias en GitHub Actions (mañana y justo después del horario
-  laboral) para 12 de las 13 tiendas; UpDown queda solo para corrida manual,
-  ver "Scraping responsable". El historial de precios guarda solo cambios.
+- Dos corridas diarias en GitHub Actions (05:17 y 19:17, justo después del
+  horario laboral) para 12 de las 13 tiendas; UpDown queda solo para corrida
+  manual, ver "Scraping responsable". Las lanza cron-job.org a la hora exacta
+  vía la API de GitHub: el `schedule` propio de GitHub las arrancaba con 3 a 7
+  horas de atraso. El historial de precios guarda solo cambios.
 - Bot de Telegram (`/start`, `/stop`, `/seguir`, `/siguiendo`, `/dar_de_baja`,
   `/ayuda`): resumen de ofertas (destacadas 50%+ y regulares 20%+ bajo la
   mediana) y avisos de los juegos que cada persona sigue (bajan de precio o

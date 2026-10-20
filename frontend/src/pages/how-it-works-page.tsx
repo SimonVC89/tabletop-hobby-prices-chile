@@ -198,8 +198,8 @@ export function HowItWorksPage() {
       <Section id="limitaciones" title="Lo que todavía no hace bien">
         <ul className="mt-4 max-w-3xl space-y-3">
           <Limitation>
-            Los precios se revisan dos veces al día, pero GitHub suele atrasar estas tareas programadas varias horas. Un
-            precio puede haber cambiado en la tienda: <Strong>el precio que vale es el de la tienda</Strong>.
+            Los precios se revisan dos veces al día, a las 5:17 y a las 19:17, y cada revisión tarda cerca de una hora. Entre
+            una y otra un precio puede cambiar en la tienda: <Strong>el precio que vale es el de la tienda</Strong>.
           </Limitation>
           <Limitation>
             Una tienda bloquea los servidores en la nube y se actualiza a mano, así que sus precios pueden tener unos días.

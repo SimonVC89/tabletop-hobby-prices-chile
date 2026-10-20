@@ -1,18 +1,16 @@
 name: Scrape and match board game prices
 
+# Lo lanza cron-job.org a las 05:17 y 19:17 hora de Chile (zona America/Santiago, asi
+# que sigue el cambio de horario solo), con un POST a la API de GitHub (workflow_dispatch)
+# y un token que solo puede lanzar workflows de este repositorio. El "schedule" de
+# GitHub se dejo de usar porque las arrancaba con 3 a 7 horas de atraso.
+# - 05:17: captura los cambios de la jornada anterior y las ofertas programadas a
+#   medianoche.
+# - 19:17: justo despues del horario laboral (8-18 h), cuando las tiendas ya cambiaron
+#   sus precios del dia.
+# Guardar solo cambios en price_history (db.insert_price_history) es lo que permite
+# scrapear dos veces al dia sin que la base crezca el doble.
 on:
-  schedule:
-    # Dos corridas al dia (hora de Chile en verano UTC-3, sep-abr / invierno UTC-4, abr-sep):
-    # - 08:17 UTC = 05:17 / 04:17: captura los cambios de la jornada anterior y las
-    #   ofertas programadas a medianoche.
-    # - 22:17 UTC = 19:17 / 18:17: justo despues del horario laboral (8-18 h), cuando las
-    #   tiendas ya cambiaron sus precios del dia.
-    # El minuto 17 es a proposito: GitHub atrasa mas los cron a la hora en punto (con
-    # "0 9" llegaban ~5 h tarde).
-    # Guardar solo cambios en price_history (db.insert_price_history) es lo que permite
-    # scrapear dos veces al dia sin que la base crezca el doble.
-    - cron: "17 8 * * *"
-    - cron: "17 22 * * *"
   workflow_dispatch: {}
 
 # Si una corrida se atrasa y se junta con la siguiente, esperan en fila en vez de
