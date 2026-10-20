@@ -1,0 +1,3 @@
+# Ni credenciales ni compilaciones locales dentro de la imagen.
+.env
+target/

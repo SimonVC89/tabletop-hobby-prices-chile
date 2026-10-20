@@ -1,0 +1,30 @@
+# Blueprint de Render: la API como codigo (https://render.com/docs/blueprint-spec).
+# Las credenciales NO van aqui: "sync: false" hace que Render las pida al crear el
+# servicio y las guarde en su panel.
+services:
+  - type: web
+    name: thpc-api
+    runtime: docker
+    plan: free
+    # La base de Supabase esta en Sao Paulo (sa-east-1); Render no tiene region en
+    # Sudamerica y Virginia es la mas cercana.
+    region: virginia
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    # Se redespliega solo con cambios en backend/ (no con cambios del scraper o la web).
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - backend/**
+    envVars:
+      # jdbc:postgresql://HOST:5432/postgres?sslmode=require (pooler en modo sesion)
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      # Dominio del frontend en Vercel, por ejemplo https://thpc.vercel.app
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
