@@ -15,4 +15,4 @@ def test_los_textos_del_perfil_respetan_los_limites_de_telegram():
 
 def test_el_menu_de_comandos_cubre_los_comandos_del_bot():
     registered = {name for name, _ in profile.COMMANDS}
-    assert {"start", "stop", "seguir", "siguiendo", "dar_de_baja", "ayuda"} <= registered
+    assert {"start", "stop", "seguir", "siguiendo", "estado", "dar_de_baja", "ayuda"} <= registered

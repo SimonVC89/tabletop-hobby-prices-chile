@@ -37,6 +37,7 @@ COMMANDS = [
     ("start", "Recibir el resumen de ofertas"),
     ("seguir", "Seguir un juego, por ejemplo: /seguir catan"),
     ("siguiendo", "Ver los juegos que sigues"),
+    ("estado", "Ver si los precios están al día y el último resumen"),
     ("stop", "Pausar el resumen de ofertas"),
     ("dar_de_baja", "Baja total y permanente de todo aviso"),
     ("ayuda", "Ver los comandos y cómo funciona"),

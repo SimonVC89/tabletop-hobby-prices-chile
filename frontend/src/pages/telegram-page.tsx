@@ -9,6 +9,10 @@ const COMMANDS = [
   { command: '/start', text: 'Recibir el resumen de ofertas.' },
   { command: '/seguir catan', text: 'Buscar un juego y seguirlo. Toca la opción que quieras: no hace falta escribir el nombre completo.' },
   { command: '/siguiendo', text: 'Ver los juegos que sigues (hasta 20).' },
+  {
+    command: '/estado',
+    text: 'Ver cuándo se revisaron los precios, cuántas ofertas hay hoy y cuándo salió el último resumen. Útil si el bot lleva días sin escribirte.',
+  },
   { command: '/stop', text: 'Pausar el resumen de ofertas. Tus juegos seguidos se mantienen.' },
   { command: '/dar_de_baja', text: 'Baja total y permanente: detiene todos los avisos y borra tu lista. Por ahora no se puede reactivar.' },
   { command: '/ayuda', text: 'Ver los comandos y cómo funciona.' },

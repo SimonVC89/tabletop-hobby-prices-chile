@@ -4,6 +4,11 @@ import static io.github.simonvc89.thpc.telegram.BotSearch.MAX_OPTIONS;
 import static io.github.simonvc89.thpc.telegram.BotSearch.clp;
 import static io.github.simonvc89.thpc.telegram.BotSearch.codeOf;
 
+import io.github.simonvc89.thpc.meta.MetaQueries;
+import io.github.simonvc89.thpc.offer.OfferQueries;
+import io.github.simonvc89.thpc.offer.OfferResponse;
+import io.github.simonvc89.thpc.offer.OfferTier;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -25,10 +30,14 @@ public class BotCommands {
 
     private final BotRepository repo;
     private final BotCatalog catalog;
+    private final MetaQueries meta;
+    private final OfferQueries offers;
 
-    BotCommands(BotRepository repo, BotCatalog catalog) {
+    BotCommands(BotRepository repo, BotCatalog catalog, MetaQueries meta, OfferQueries offers) {
         this.repo = repo;
         this.catalog = catalog;
+        this.meta = meta;
+        this.offers = offers;
     }
 
     /**
@@ -66,6 +75,7 @@ public class BotCommands {
                 yield Optional.of(BotTexts.OPTED_OUT);
             }
             case "/siguiendo" -> Optional.of(following(chatId));
+            case "/estado" -> Optional.of(status(chatId));
             case "/seguir" -> follow(chatId, args);
             default -> {
                 if (command.startsWith("/seguir_")) {
@@ -80,6 +90,19 @@ public class BotCommands {
                 yield Optional.of(BotTexts.UNKNOWN);
             }
         };
+    }
+
+    /** /estado: que la app sigue al dia, aunque el resumen lleve dias sin salir. */
+    private String status(String chatId) {
+        List<OfferResponse> current = offers.currentOffers();
+        int games = (int) current.stream().map(OfferResponse::productId).distinct().count();
+        int destacadas = (int) current.stream()
+                .filter(o -> o.tier() == OfferTier.DESTACADA)
+                .map(OfferResponse::productId)
+                .distinct()
+                .count();
+        return new BotStatus(meta.lastUpdated(), games, destacadas, repo.isSubscribed(chatId),
+                repo.countFollows(chatId), repo.lastDigest().orElse(null)).message(Instant.now());
     }
 
     private String start(String chatId) {

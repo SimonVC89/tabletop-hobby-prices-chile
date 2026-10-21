@@ -16,6 +16,7 @@ final class BotTexts {
             /stop - pausar el resumen (puedes volver con /start). No afecta a los juegos que sigues
             /seguir <juego> - avisarte cuando un juego baje de precio o vuelva a tener stock
             /siguiendo - ver los juegos que sigues
+            /estado - ver si los precios están al día y cuándo salió el último resumen
             /dar_de_baja - baja total y permanente de todo aviso (también borra tu lista). \
             Por ahora no se puede reactivar.
             /ayuda - este mensaje""";

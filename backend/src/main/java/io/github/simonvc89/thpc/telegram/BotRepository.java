@@ -2,6 +2,7 @@ package io.github.simonvc89.thpc.telegram;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Tuple;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,6 +57,22 @@ class BotRepository {
                 .setParameter("chat", chatId)
                 .getResultList();
         return !rows.isEmpty() && (Boolean) rows.getFirst();
+    }
+
+    /** Si el chat recibe el resumen de ofertas (activo y sin baja total). */
+    boolean isSubscribed(String chatId) {
+        List<Object> rows = em.createNativeQuery(
+                        "select is_active and not opted_out_permanently from telegram_subscribers where chat_id = :chat")
+                .setParameter("chat", chatId)
+                .getResultList();
+        return !rows.isEmpty() && (Boolean) rows.getFirst();
+    }
+
+    /** Cuando salio el ultimo resumen de ofertas: la ultima oferta registrada como avisada. */
+    Optional<Instant> lastDigest() {
+        return Optional.ofNullable(
+                (Instant) em.createNativeQuery("select max(notified_at) from price_alerts", Instant.class)
+                        .getSingleResult());
     }
 
     Optional<ChatState> subscriber(String chatId) {
