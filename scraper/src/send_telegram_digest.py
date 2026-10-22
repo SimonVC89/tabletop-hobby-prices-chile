@@ -31,6 +31,7 @@ def fetch_candidate_offers(conn) -> list[dict]:
             select * from (
               select distinct on (cp.product_id, cp.store_id)
                 cp.listing_id,
+                cp.product_id::text as product_id,
                 p.canonical_name,
                 s.name as store_name,
                 pl.url,
@@ -60,32 +61,52 @@ def fetch_candidate_offers(conn) -> list[dict]:
         return [dict(zip(columns, row)) for row in cur.fetchall()]
 
 
-def format_section(title: str, offers: list[dict], top_n: int) -> str:
-    if not offers:
+def clp(value: int) -> str:
+    # Solo el separador de miles del precio: reemplazar comas en toda la linea
+    # rompia la coma de "off, Tienda" y cualquier coma del nombre o del enlace.
+    return "$" + f"{value:,}".replace(",", ".")
+
+
+def group_by_game(offers: list[dict]) -> list[list[dict]]:
+    """Una entrada por juego: si dos tiendas lo tienen en oferta, van juntas.
+
+    Cada grupo empieza por la oferta con mas descuento (la que define en que
+    seccion va el juego); los grupos quedan de mayor a menor descuento.
+    """
+    groups: dict[str, list[dict]] = {}
+    for o in offers:
+        groups.setdefault(o["product_id"], []).append(o)
+    for group in groups.values():
+        group.sort(key=lambda o: (-o["discount_pct"], o["price_clp"]))
+    return sorted(groups.values(), key=lambda g: -g[0]["discount_pct"])
+
+
+def format_section(title: str, games: list[list[dict]], top_n: int) -> str:
+    if not games:
         return ""
 
-    shown = offers[:top_n]
-    remaining = len(offers) - len(shown)
+    shown = games[:top_n]
+    remaining = len(games) - len(shown)
 
     lines = [title]
-    for i, o in enumerate(shown, start=1):
-        # Solo el separador de miles del precio: reemplazar comas en toda la linea
-        # rompia la coma de "off, Tienda" y cualquier coma del nombre o del enlace.
-        price = f"{o['price_clp']:,}".replace(",", ".")
+    for i, (main, *others) in enumerate(shown, start=1):
         lines.append(
-            f"{i}. {o['canonical_name']} - ${price} ({o['discount_pct']}% off, {o['store_name']})\n"
-            f"   {o['url']}"
+            f"{i}. {main['canonical_name']} - {clp(main['price_clp'])} ({main['discount_pct']}% off, {main['store_name']})\n"
+            f"   {main['url']}"
         )
+        for o in others:
+            lines.append(f"   También en {o['store_name']}: {clp(o['price_clp'])} ({o['discount_pct']}% off)\n   {o['url']}")
 
     if remaining > 0:
-        lines.append(f"...y {remaining} ofertas mas.")
+        lines.append(f"...y {remaining} juegos mas en oferta.")
 
     return "\n".join(lines)
 
 
 def build_digest_text(offers: list[dict]) -> str | None:
-    destacadas = [o for o in offers if o["discount_pct"] >= DESTACADA_THRESHOLD]
-    otras = [o for o in offers if OFERTA_THRESHOLD <= o["discount_pct"] < DESTACADA_THRESHOLD]
+    games = group_by_game(offers)
+    destacadas = [g for g in games if g[0]["discount_pct"] >= DESTACADA_THRESHOLD]
+    otras = [g for g in games if OFERTA_THRESHOLD <= g[0]["discount_pct"] < DESTACADA_THRESHOLD]
 
     sections = [
         format_section("🔥 Ofertas destacadas (50%+ bajo la mediana):", destacadas, TOP_N_DESTACADAS),
