@@ -118,6 +118,29 @@ jobs:
         continue-on-error: true
         run: python -m src.ingest_jugones
 
+      # Si el sitio de una tienda estaba caido, se reintenta despues de esperar 2 y 5
+      # min, cuando las demas ya terminaron (src/retry_failed_stores.py). Va antes del
+      # matching para que lo recuperado entre en esta misma corrida.
+      - name: Retry failed stores
+        id: retry_stores
+        if: always()
+        continue-on-error: true
+        env:
+          STORE_OUTCOMES: |
+            src.ingest_laloseta=${{ steps.laloseta.outcome }}
+            src.ingest_dementegames=${{ steps.dementegames.outcome }}
+            src.ingest_vudugaming=${{ steps.vudugaming.outcome }}
+            src.ingest_griffingames=${{ steps.griffingames.outcome }}
+            src.ingest_aldeajuegos=${{ steps.aldeajuegos.outcome }}
+            src.ingest_manahouse=${{ steps.manahouse.outcome }}
+            src.ingest_cafe2d6=${{ steps.cafe2d6.outcome }}
+            src.ingest_elpatiogeek=${{ steps.elpatiogeek.outcome }}
+            src.ingest_wargaming=${{ steps.wargaming.outcome }}
+            src.ingest_diverti=${{ steps.diverti.outcome }}
+            src.ingest_piedrabruja=${{ steps.piedrabruja.outcome }}
+            src.ingest_jugones=${{ steps.jugones.outcome }}
+        run: python -m src.retry_failed_stores
+
       - name: Compute match keys
         run: python -m src.matching.compute_keys
 
@@ -156,30 +179,13 @@ jobs:
       - name: Send Telegram digest
         run: python -m src.send_telegram_digest
 
-      # Si alguna tienda fallo, el job completo se marca como fallido
-      # (dispara el email de GitHub) aunque el resto si se haya procesado.
+      # Si una tienda sigue fallando despues de los reintentos, el job completo se
+      # marca como fallido (dispara el email de GitHub) aunque el resto si se haya
+      # procesado. Una caida pasajera que se recupero al reintentar no cuenta.
       - name: Check for store failures
         if: always()
         run: |
-          failed=0
-          for outcome in \
-            "${{ steps.laloseta.outcome }}" \
-            "${{ steps.dementegames.outcome }}" \
-            "${{ steps.vudugaming.outcome }}" \
-            "${{ steps.griffingames.outcome }}" \
-            "${{ steps.aldeajuegos.outcome }}" \
-            "${{ steps.manahouse.outcome }}" \
-            "${{ steps.cafe2d6.outcome }}" \
-            "${{ steps.elpatiogeek.outcome }}" \
-            "${{ steps.wargaming.outcome }}" \
-            "${{ steps.diverti.outcome }}" \
-            "${{ steps.piedrabruja.outcome }}" \
-            "${{ steps.jugones.outcome }}"; do
-            if [ "$outcome" != "success" ]; then
-              echo "::warning::Un scraper de tienda fallo (outcome=$outcome)"
-              failed=1
-            fi
-          done
-          if [ "$failed" -eq 1 ]; then
+          if [ "${{ steps.retry_stores.outcome }}" != "success" ]; then
+            echo "::error::Al menos una tienda sigue fallando despues de reintentar (ver el paso Retry failed stores)"
             exit 1
           fi
