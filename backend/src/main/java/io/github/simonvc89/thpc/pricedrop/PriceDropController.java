@@ -21,10 +21,11 @@ public class PriceDropController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    @Operation(summary = "Bajaron en las últimas 24 horas",
-            description = "Juegos con stock cuyo precio bajó 5% o más en alguna tienda en las últimas 24 horas "
-                    + "(volver a tener stock no cuenta). Uno por juego, su mayor baja, de mayor a menor, hasta 12. "
-                    + "No siempre es oferta: a veces el juego solo vuelve a su precio normal.")
+    @Operation(summary = "Bajaron esta semana",
+            description = "Juegos con stock cuyo precio bajó 5% o más en alguna tienda en los últimos 7 días y "
+                    + "sigue bajo (si volvió a subir, ya no sale; volver a tener stock no cuenta). Uno por juego, "
+                    + "su mayor baja, de mayor a menor, hasta 12; changedAt dice cuándo bajó. No siempre es oferta: "
+                    + "a veces el juego solo vuelve a su precio normal.")
     public List<PriceDropResponse> list() {
         return PriceDropSelector.select(queries.candidates());
     }

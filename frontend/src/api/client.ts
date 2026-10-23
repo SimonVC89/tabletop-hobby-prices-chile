@@ -23,7 +23,7 @@ export interface Api {
   getStores(): Promise<Store[]>
   getProducts(query?: ProductQuery): Promise<Page<ProductSummary>>
   getOffers(): Promise<Offer[]>
-  /** Bajas de precio de las ultimas 24 horas; ver PriceDrop para la regla. */
+  /** Bajas de precio de los ultimos 7 dias; ver PriceDrop para la regla. */
   getPriceDrops(): Promise<PriceDrop[]>
   getProduct(id: string): Promise<ProductDetail>
   getPriceHistory(id: string): Promise<PriceHistory>

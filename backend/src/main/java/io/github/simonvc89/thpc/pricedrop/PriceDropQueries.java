@@ -12,7 +12,8 @@ public class PriceDropQueries {
 
     // price_history guarda solo cambios: la ultima fila de un listing ES su ultimo
     // cambio. Hay baja si esa fila es reciente, tiene stock y es mas barata que la
-    // anterior, tambien con stock (volver a tener stock no es una baja).
+    // anterior, tambien con stock (volver a tener stock no es una baja). Si el precio
+    // volvio a subir despues, la ultima fila ya no es la baja: solo salen bajas vigentes.
     private static final String CANDIDATES_SQL = """
             with ranked as (
                 select ph.listing_id, ph.price_clp, ph.in_stock, ph.scraped_at,
@@ -28,7 +29,7 @@ public class PriceDropQueries {
             join products p on p.id = pl.product_id
             join stores s on s.id = pl.store_id and s.active
             where last.rn = 1
-              and last.scraped_at > now() - make_interval(hours => :hours)
+              and last.scraped_at > now() - make_interval(days => :days)
               and last.in_stock and prev.in_stock and last.price_clp < prev.price_clp
               and p.hidden_at is null and p.merged_into is null and p.category = 'board_game'
             """;
@@ -42,7 +43,7 @@ public class PriceDropQueries {
     @SuppressWarnings("unchecked") // createNativeQuery devuelve una List sin tipo
     public List<PriceDropSelector.Candidate> candidates() {
         List<Tuple> rows = em.createNativeQuery(CANDIDATES_SQL, Tuple.class)
-                .setParameter("hours", PriceDropSelector.WINDOW_HOURS)
+                .setParameter("days", PriceDropSelector.WINDOW_DAYS)
                 .getResultList();
         return rows.stream()
                 .map(r -> new PriceDropSelector.Candidate(

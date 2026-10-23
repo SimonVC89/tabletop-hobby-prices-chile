@@ -34,6 +34,16 @@ export function formatUpdated(iso: string, now: Date = new Date()) {
   return `el ${formatDateTime(iso)}`
 }
 
+/** ISO -> "hoy", "ayer" o "hace 3 días", contando días de calendario y no horas */
+export function formatDaysAgo(iso: string, now: Date = new Date()) {
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  // round y no floor: un dia con cambio de horario dura 23 o 25 horas.
+  const days = Math.round((startOfDay(now) - startOfDay(new Date(iso))) / 86_400_000)
+  if (days <= 0) return 'hoy'
+  if (days === 1) return 'ayer'
+  return `hace ${days} días`
+}
+
 // Los dias del historial vienen como "2026-10-13" (sin hora): se formatean
 // en UTC para que la zona horaria no los corra al dia anterior.
 const day = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'short', timeZone: 'UTC' })

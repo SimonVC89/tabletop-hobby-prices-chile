@@ -5,16 +5,18 @@ import { useMeta, useOffers, usePriceDrops } from '@/api/hooks'
 import type { Offer, PriceDrop } from '@/api/types'
 import { ProductImage } from '@/components/product-image'
 import { Button } from '@/components/ui/button'
-import { formatCLP, formatCount, formatPct, formatUpdated } from '@/lib/format'
+import { formatCLP, formatCount, formatDaysAgo, formatPct, formatUpdated } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const BOARD_SIZE = 6
 const DROPS_SHOWN = 8
+/** Horas de partida del scraper (hora de Chile), en minutos desde medianoche. */
+const SCRAPER_RUNS = [5 * 60 + 17, 19 * 60 + 17]
 
 /**
  * Portada "mesa de juego": a la izquierda que es esto y un buscador; a la derecha
- * un tablero con las 6 mejores ofertas del dia. Debajo, lo que bajo de precio en las
- * ultimas 24 horas y dos invitaciones (Telegram y como funciona).
+ * un tablero con las 6 mejores ofertas del dia. Debajo, lo que bajo de precio en la
+ * semana y dos invitaciones (Telegram y como funciona).
  */
 export function HomePage() {
   const { data: meta } = useMeta()
@@ -190,32 +192,56 @@ function BoardTile({ offer }: { offer: Offer }) {
   )
 }
 
-// --- bajas del dia -----------------------------------------------------
+// --- bajas de la semana ------------------------------------------------
 
 function PriceDrops() {
   const { data: drops } = usePriceDrops()
-  // Se oculta si no hay bajas (o mientras carga): es un extra, no el centro de la portada.
-  if (!drops || drops.length === 0) return null
+  // Mientras carga (o si falla) no se muestra: es un extra, no el centro de la portada.
+  if (!drops) return null
 
   return (
     <section aria-labelledby="drops-title">
       <h2 id="drops-title" className="text-2xl font-bold">
-        Bajaron en las últimas 24 horas
+        Bajaron esta semana
       </h2>
       <p className="mt-2 text-muted-foreground">
-        Juegos con stock cuyo precio bajó 5% o más en alguna tienda. No siempre es oferta: a veces solo vuelve a su
-        precio normal.
+        Juegos con stock cuyo precio bajó 5% o más en alguna tienda en los últimos 7 días y sigue bajo. No siempre es
+        oferta: a veces solo vuelve a su precio normal.
       </p>
 
-      <ul className="mt-6 divide-y rounded-lg border bg-card">
-        {drops.slice(0, DROPS_SHOWN).map((drop) => (
-          <li key={drop.productId}>
-            <DropRow drop={drop} />
-          </li>
-        ))}
-      </ul>
+      {drops.length === 0 ? (
+        <p className="mt-6 rounded-lg border border-dashed bg-card px-4 py-6 text-center text-muted-foreground">
+          Ningún juego bajó de precio esta semana. Las tiendas cambian precios pocas veces; la próxima revisión parte{' '}
+          {nextScraperRun()}.
+        </p>
+      ) : (
+        <ul className="mt-6 divide-y rounded-lg border bg-card">
+          {drops.slice(0, DROPS_SHOWN).map((drop) => (
+            <li key={drop.productId}>
+              <DropRow drop={drop} />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
+}
+
+const chileClock = new Intl.DateTimeFormat('es-CL', {
+  timeZone: 'America/Santiago',
+  hour: 'numeric',
+  minute: 'numeric',
+  hourCycle: 'h23',
+})
+
+/** "hoy a las 19:17" o "mañana a las 5:17", según la hora de Chile (aunque el navegador esté en otra zona). */
+function nextScraperRun(now: Date = new Date()) {
+  const parts = Object.fromEntries(chileClock.formatToParts(now).map((p) => [p.type, p.value]))
+  const minutes = Number(parts.hour) * 60 + Number(parts.minute)
+  const next = SCRAPER_RUNS.find((run) => run > minutes)
+  const run = next ?? SCRAPER_RUNS[0]
+  const time = `${Math.floor(run / 60)}:${String(run % 60).padStart(2, '0')}`
+  return `${next === undefined ? 'mañana' : 'hoy'} a las ${time}`
 }
 
 function DropRow({ drop }: { drop: PriceDrop }) {
@@ -227,7 +253,10 @@ function DropRow({ drop }: { drop: PriceDrop }) {
       <ProductImage src={drop.imageUrl} alt="" imagePadding="p-1" className="size-14 shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{drop.productName}</p>
-        <p className="text-sm text-muted-foreground">{drop.storeName}</p>
+        <p className="truncate text-sm text-muted-foreground">
+          {drop.storeName} · <span className="sr-only">bajó </span>
+          {formatDaysAgo(drop.changedAt)}
+        </p>
       </div>
       <div className="shrink-0 text-right">
         <p className="price font-semibold">

@@ -8,12 +8,15 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Elige que bajas mostrar en "Bajaron en las ultimas 24 horas" (pagina de Inicio).
+ * Elige que bajas mostrar en "Bajaron esta semana" (pagina de Inicio).
  */
 public final class PriceDropSelector {
 
-    /** Ventana de la seccion. */
-    public static final int WINDOW_HOURS = 24;
+    /**
+     * Ventana de la seccion. Una semana y no un dia: las tiendas cambian precios pocas
+     * veces por semana y con 24 horas la seccion pasaba dias vacia.
+     */
+    public static final int WINDOW_DAYS = 7;
     /** El mismo umbral que los avisos de juegos seguidos por Telegram. */
     public static final double MIN_PCT = 5;
     public static final int LIMIT = 12;
