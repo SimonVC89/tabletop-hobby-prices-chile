@@ -5,7 +5,7 @@ es detectar ofertas reales por **asimetría de información** entre tiendas
 (una tienda que no actualiza su precio según la referencia real de mercado),
 no errores de tipeo puntuales.
 
-**Sitio:** https://thpc.vercel.app · **API:** https://thpc-api.onrender.com/api/meta
+**Sitio:** https://thpc.vercel.app · **API (documentación y pruebas con Swagger):** https://thpc-api.onrender.com/swagger-ui.html
 
 ## Motivación
 
@@ -87,7 +87,8 @@ credenciales se filtraran, no servirían para modificar ni borrar datos.
   frontend (`frontend/src/api/types.ts`): ofertas, búsqueda paginada,
   ficha, historial diario reconstruido y juegos relacionados (similitud de
   pgvector). Publicada en Render con Docker; un ping periódico evita que el
-  plan gratuito la duerma.
+  plan gratuito la duerma. Documentada con OpenAPI (springdoc): en
+  `/swagger-ui.html` se ven todos los endpoints y se pueden probar.
 - Frontend en React publicado en Vercel: Inicio, ofertas, buscador, ficha
   con gráfico de historial por tienda, página del bot y "Cómo funciona".
 - Política de retención de datos: `price_history` se poda a 8 meses, y un
@@ -116,7 +117,7 @@ credenciales se filtraran, no servirían para modificar ni borrar datos.
       de productos descontinuados (6 meses sin listings activos)
 - [ ] CI/CD por carpeta para `backend/` y `frontend/` (tests/build en PRs)
 - [x] Backend: API REST con DTOs, paginación y caché del catálogo
-- [ ] Documentación OpenAPI/Swagger de la API
+- [x] Documentación OpenAPI/Swagger de la API
 - [x] Frontend con gráficos de precio histórico (Recharts)
 - [ ] Sub-categorización de juegos de mesa (familiar/estrategia/party, etc.) —
       cada tienda usa su propia taxonomía, sin estándar compartido entre ellas

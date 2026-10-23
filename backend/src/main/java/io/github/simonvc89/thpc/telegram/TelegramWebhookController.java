@@ -3,6 +3,7 @@ package io.github.simonvc89.thpc.telegram;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.simonvc89.thpc.ThpcProperties;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * la llamada se rechaza, asi nadie mas puede hacerse pasar por Telegram.
  */
 @RestController
+@Hidden // Solo para Telegram (exige un secreto): no va en la documentacion publica.
 public class TelegramWebhookController {
 
     static final String SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token";

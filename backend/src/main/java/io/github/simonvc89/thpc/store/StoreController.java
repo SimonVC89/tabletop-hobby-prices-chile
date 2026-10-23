@@ -1,6 +1,8 @@
 package io.github.simonvc89.thpc.store;
 
 import io.github.simonvc89.thpc.ThpcProperties;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/stores")
+@Tag(name = "Tiendas", description = "Tiendas chilenas que se revisan")
 public class StoreController {
 
     private final StoreRepository stores;
@@ -25,6 +28,10 @@ public class StoreController {
     /** Todas las tiendas, tambien las excluidas (el frontend decide que mostrar), por nombre. */
     @GetMapping
     @Transactional(readOnly = true)
+    @Operation(summary = "Tiendas",
+            description = "Todas las tiendas, ordenadas por nombre, con sus productos activos. status: daily "
+                    + "(se revisa sola dos veces al día), manual (bloquea servidores en la nube y se actualiza "
+                    + "a mano) o excluded (bloquea el acceso automatizado; se dejó de revisar).")
     public List<StoreResponse> list() {
         Map<UUID, Long> listings = stores.countActiveListings().stream()
                 .collect(Collectors.toMap(StoreRepository.ListingCount::getStoreId,

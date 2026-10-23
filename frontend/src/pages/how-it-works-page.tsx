@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 const LINKEDIN_URL = 'https://www.linkedin.com/in/simonvillarcabrera'
 const GITHUB_URL = 'https://github.com/SimonVC89'
 const REPO_URL = 'https://github.com/SimonVC89/tabletop-hobby-prices-chile'
+const API_DOCS_URL = 'https://thpc-api.onrender.com/swagger-ui.html'
 
 const PIPELINE = [
   {
@@ -64,8 +65,8 @@ const STACK = [
   },
   {
     area: 'API',
-    tech: 'Spring Boot · Java 21 · Docker en Render',
-    why: 'La web y el bot leen de la misma API, con un usuario de base de datos que no puede modificar los precios.',
+    tech: 'Spring Boot · Java 21 · Docker en Render · OpenAPI',
+    why: 'La web y el bot leen de la misma API, con un usuario de base de datos que no puede modificar los precios. Documentada con Swagger: cada endpoint se puede probar desde el navegador.',
   },
   {
     area: 'Avisos',
@@ -229,6 +230,7 @@ export function HowItWorksPage() {
             <ExternalLink href={LINKEDIN_URL}>LinkedIn</ExternalLink>
             <ExternalLink href={GITHUB_URL}>GitHub</ExternalLink>
             <ExternalLink href={REPO_URL}>Código de este proyecto</ExternalLink>
+            <ExternalLink href={API_DOCS_URL}>Documentación de la API</ExternalLink>
           </div>
         </div>
       </Section>

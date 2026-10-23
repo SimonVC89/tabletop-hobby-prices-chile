@@ -32,6 +32,15 @@ thpc:
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
 
+# Documentacion de la API: /swagger-ui.html (pagina) y /v3/api-docs (JSON OpenAPI).
+# Solo /api/**: quedan fuera el actuator y el webhook de Telegram (que ademas es @Hidden).
+springdoc:
+  paths-to-match: /api/**
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    try-it-out-enabled: true
+
 server:
   # Render asigna el puerto en la variable PORT.
   port: ${PORT:8080}
