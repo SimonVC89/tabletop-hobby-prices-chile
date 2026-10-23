@@ -1,5 +1,10 @@
 # Tabletop Hobby Prices Chile
 
+[![CI scraper](https://github.com/SimonVC89/tabletop-hobby-prices-chile/actions/workflows/ci-scraper.yml/badge.svg?branch=main)](https://github.com/SimonVC89/tabletop-hobby-prices-chile/actions/workflows/ci-scraper.yml)
+[![CI backend](https://github.com/SimonVC89/tabletop-hobby-prices-chile/actions/workflows/ci-backend.yml/badge.svg?branch=main)](https://github.com/SimonVC89/tabletop-hobby-prices-chile/actions/workflows/ci-backend.yml)
+[![CI frontend](https://github.com/SimonVC89/tabletop-hobby-prices-chile/actions/workflows/ci-frontend.yml/badge.svg?branch=main)](https://github.com/SimonVC89/tabletop-hobby-prices-chile/actions/workflows/ci-frontend.yml)
+[![Licencia MIT](https://img.shields.io/github/license/SimonVC89/tabletop-hobby-prices-chile)](LICENSE)
+
 Monitoreo de precios de juegos de mesa en tiendas chilenas online. El objetivo
 es detectar ofertas reales por **asimetría de información** entre tiendas
 (una tienda que no actualiza su precio según la referencia real de mercado),
@@ -115,7 +120,7 @@ credenciales se filtraran, no servirían para modificar ni borrar datos.
 - [x] Webhook de Telegram en el backend, para que el bot responda en segundos
 - [x] Política de retención: poda de `price_history` (8 meses) y soft-delete
       de productos descontinuados (6 meses sin listings activos)
-- [ ] CI/CD por carpeta para `backend/` y `frontend/` (tests/build en PRs)
+- [x] CI por carpeta para `scraper/`, `backend/` y `frontend/` en cada push y PR: pytest, JUnit + build del backend, lint + build del frontend
 - [x] Backend: API REST con DTOs, paginación y caché del catálogo
 - [x] Documentación OpenAPI/Swagger de la API
 - [x] Frontend con gráficos de precio histórico (Recharts)
