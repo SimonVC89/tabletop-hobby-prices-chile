@@ -179,13 +179,14 @@ jobs:
       - name: Send Telegram digest
         run: python -m src.send_telegram_digest
 
-      # Si una tienda sigue fallando despues de los reintentos, el job completo se
+      # Si una tienda lleva dos corridas seguidas sin poder leerse, el job completo se
       # marca como fallido (dispara el email de GitHub) aunque el resto si se haya
-      # procesado. Una caida pasajera que se recupero al reintentar no cuenta.
+      # procesado. Una caida que se recupero al reintentar no cuenta, y una tienda que
+      # falla en una sola corrida queda como advertencia (src/retry_failed_stores.py).
       - name: Check for store failures
         if: always()
         run: |
           if [ "${{ steps.retry_stores.outcome }}" != "success" ]; then
-            echo "::error::Al menos una tienda sigue fallando despues de reintentar (ver el paso Retry failed stores)"
+            echo "::error::Al menos una tienda lleva dos corridas seguidas sin poder leerse (ver el paso Retry failed stores)"
             exit 1
           fi
