@@ -1,6 +1,6 @@
 name: CI frontend
 
-# Linter, tipos y build del frontend en cada cambio de frontend/ (push a main o PR).
+# Linter, pruebas, tipos y build del frontend en cada cambio de frontend/ (push a main o PR).
 # Vercel publica por su cuenta; esto avisa si un cambio rompe el build antes de verlo
 # fallar alla.
 on:
@@ -36,6 +36,9 @@ jobs:
 
       - name: Linter
         run: npm run lint
+
+      - name: Pruebas
+        run: npm test
 
       # Incluye tsc -b (chequeo de tipos) antes de vite build.
       - name: Build
