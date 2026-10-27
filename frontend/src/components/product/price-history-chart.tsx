@@ -1,7 +1,22 @@
 import { useMemo, useState } from 'react'
-import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  CartesianGrid,
+  DefaultZIndexes,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  usePlotArea,
+  useXAxisScale,
+  useYAxisScale,
+  XAxis,
+  YAxis,
+  ZIndexLayer,
+} from 'recharts'
 import { useStores } from '@/api/hooks'
 import type { PriceHistory, ProductListing } from '@/api/types'
+import { placeLabels } from '@/lib/chart-labels'
 import { formatCLP, formatDay } from '@/lib/format'
 import { addDays, daysBetween, type MarketDay } from '@/lib/price-history'
 import { cn } from '@/lib/utils'
@@ -14,8 +29,6 @@ import { cn } from '@/lib/utils'
  */
 
 const MAX_STORES = 8
-// Hasta cuantas tiendas activas se rotulan con su nombre al final de la linea.
-const MAX_LABELED = 4
 const SERIES_COLORS = Array.from({ length: MAX_STORES }, (_, i) => `var(--series-${i + 1})`)
 
 const RANGES = [
@@ -91,11 +104,7 @@ export function PriceHistoryChart({ history, days, listings, className }: Props)
 
   const rows = useMemo(() => buildRows(visibleDays, Object.keys(active)), [visibleDays, active])
   const yAxis = useMemo(() => priceAxis(rows), [rows])
-  // Nombre al final de cada linea solo con pocas tiendas: con mas se pisan.
-  const labels = useMemo(
-    () => (Object.keys(active).length <= MAX_LABELED ? endLabels(rows, Object.keys(active), yAxis.domain) : new Map()),
-    [rows, active, yAxis.domain],
-  )
+  const ends = useMemo(() => lineEnds(rows, Object.keys(active)), [rows, active])
 
   if (days.length === 0) {
     return (
@@ -123,11 +132,6 @@ export function PriceHistoryChart({ history, days, listings, className }: Props)
     visibleDays.at(-1)!
   const nameById = new Map(options.map((o) => [o.storeId, o.storeName]))
   const dimmed = (storeId?: string) => emphasis !== null && emphasis !== storeId
-  const labelFor = (key: string) => {
-    const l = labels.get(key)
-    if (!l) return undefined
-    return endLabel(l.index, l.dy, nameById.get(l.storeId) ?? '', dimmed(l.storeId), l.index < rows.length / 4)
-  }
 
   return (
     <div className={cn('rounded-lg border bg-card p-4 sm:p-5', className)}>
@@ -241,7 +245,6 @@ export function PriceHistoryChart({ history, days, listings, className }: Props)
                 strokeOpacity={dimmed(id) ? 0.2 : 0.8}
                 dot={false}
                 activeDot={false}
-                label={labelFor(outKey(id))}
                 isAnimationActive={false}
               />,
               <Line
@@ -253,7 +256,6 @@ export function PriceHistoryChart({ history, days, listings, className }: Props)
                 strokeOpacity={dimmed(id) ? 0.25 : 1}
                 dot={isolatedDot(rows, inKey(id), SERIES_COLORS[slot])}
                 activeDot={{ r: 4, fill: SERIES_COLORS[slot], stroke: 'var(--card)', strokeWidth: 2 }}
-                label={labelFor(inKey(id))}
                 isAnimationActive={false}
               />,
             ])}
@@ -294,6 +296,12 @@ export function PriceHistoryChart({ history, days, listings, className }: Props)
                 onMouseLeave={() => setHovered(null)}
               />
             ))}
+            <EndLabels
+              ends={ends}
+              nameById={nameById}
+              colorById={new Map(Object.entries(active).map(([id, slot]) => [id, SERIES_COLORS[slot]]))}
+              dimmed={dimmed}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -636,68 +644,91 @@ function niceStep(raw: number) {
   return [1, 2, 2.5, 5, 10].map((m) => m * pow).find((s) => s >= raw)!
 }
 
-interface EndLabelPos {
+interface LineEnd {
   storeId: string
-  index: number
-  /** Desplazamiento vertical en px: separa nombres de tiendas con precios parecidos. */
-  dy: number
+  date: string
+  value: number
+  /** La linea termina en el primer cuarto del grafico: el nombre va a su derecha. */
+  atStart: boolean
 }
 
-/**
- * Donde va el nombre de cada tienda: en el ultimo punto de su linea (con o
- * sin stock). Si dos lineas terminan casi en el mismo precio, los nombres se
- * apilan en vez de pisarse. Devuelve un mapa dataKey -> posicion.
- */
-function endLabels(rows: Row[], ids: string[], [lo, hi]: [number, number]): Map<string, EndLabelPos> {
-  const ends = ids.flatMap((id) => {
+/** Ultimo punto de la linea de cada tienda activa (con o sin stock). */
+function lineEnds(rows: Row[], ids: string[]): LineEnd[] {
+  return ids.flatMap((id) => {
     for (let i = rows.length - 1; i >= 0; i--) {
-      const vIn = rows[i][inKey(id)]
-      const vOut = rows[i][outKey(id)]
-      if (typeof vIn === 'number') return [{ id, key: inKey(id), index: i, value: vIn }]
-      if (typeof vOut === 'number') return [{ id, key: outKey(id), index: i, value: vOut }]
+      const value = rows[i][inKey(id)] ?? rows[i][outKey(id)]
+      if (typeof value === 'number') return [{ storeId: id, date: rows[i].date, value, atStart: i < rows.length / 4 }]
     }
     return []
   })
-  ends.sort((a, b) => b.value - a.value)
-
-  const near = (hi - lo) * 0.08
-  const result = new Map<string, EndLabelPos>()
-  let prev: { index: number; value: number; dy: number } | null = null
-  for (const e of ends) {
-    const stacked: boolean = prev !== null && Math.abs(prev.index - e.index) <= 3 && prev.value - e.value < near
-    const dy: number = stacked && prev ? prev.dy + 13 : -7
-    result.set(e.key, { storeId: e.id, index: e.index, dy })
-    prev = { index: e.index, value: e.value, dy }
-  }
-  return result
 }
 
+// Ancho aproximado de un caracter a 11px: alcanza para saber si dos nombres se tocan.
+const CHAR_WIDTH = 6.2
+const LABEL_GAP_PX = 14
+
 /**
- * Nombre de la tienda junto al final de su linea, en color de texto (no el
- * de la serie) con un borde del color de la tarjeta para que se lea encima
- * de otras lineas.
+ * Nombre de cada tienda junto al final de su linea, todos en una capa sobre
+ * las lineas. placeLabels los separa en pixeles y los mantiene dentro del
+ * grafico, asi se leen las 8 aunque terminen en precios parecidos. El punto
+ * de color dice de que linea es cada uno si tuvo que correrse; el texto va
+ * en color de texto con borde del color de la tarjeta para leerse encima de
+ * otras lineas. Oculto para lectores de pantalla: los nombres ya estan en la
+ * leyenda y en la tabla.
  */
-function endLabel(index: number, dy: number, name: string, dimmed: boolean, atStart: boolean) {
-  function EndLabel({ x, y, index: i }: { x?: number | string; y?: number | string; index?: number }) {
-    if (i !== index || x == null || y == null) return <g />
-    return (
-      <text
-        x={Number(x) + (atStart ? 6 : -6)}
-        y={Number(y) + dy}
-        textAnchor={atStart ? 'start' : 'end'}
-        fontSize={11}
-        fill="var(--foreground)"
-        fillOpacity={dimmed ? 0.35 : 1}
-        stroke="var(--card)"
-        strokeWidth={3}
-        paintOrder="stroke"
-        style={{ fontFamily: 'var(--font-sans)' }}
-      >
-        {name}
-      </text>
-    )
-  }
-  return EndLabel
+function EndLabels({
+  ends,
+  nameById,
+  colorById,
+  dimmed,
+}: {
+  ends: LineEnd[]
+  nameById: Map<string, string>
+  colorById: Map<string, string>
+  dimmed: (storeId: string) => boolean
+}) {
+  const xScale = useXAxisScale()
+  const yScale = useYAxisScale()
+  const plot = usePlotArea()
+  if (!xScale || !yScale || !plot) return null
+
+  const labels = ends.flatMap((e) => {
+    const x = xScale(e.date)
+    const y = yScale(e.value)
+    if (x === undefined || y === undefined) return []
+    const name = nameById.get(e.storeId) ?? ''
+    const width = (name.length + 2) * CHAR_WIDTH
+    const anchorX = e.atStart ? x + 6 : x - 6
+    const x0 = e.atStart ? anchorX : anchorX - width
+    // Un poco sobre la linea, no encima de ella.
+    return [{ key: e.storeId, name, atStart: e.atStart, anchorX, x0, x1: x0 + width, y: y - 9 }]
+  })
+  const ys = placeLabels(labels, plot.y + LABEL_GAP_PX / 2, plot.y + plot.height - LABEL_GAP_PX / 2, LABEL_GAP_PX)
+
+  return (
+    <ZIndexLayer zIndex={DefaultZIndexes.label}>
+      <g aria-hidden="true">
+        {labels.map((l) => (
+          <text
+            key={l.key}
+            x={l.anchorX}
+            y={ys.get(l.key)}
+            dominantBaseline="middle"
+            textAnchor={l.atStart ? 'start' : 'end'}
+            fontSize={11}
+            fill="var(--foreground)"
+            fillOpacity={dimmed(l.key) ? 0.35 : 1}
+            stroke="var(--card)"
+            strokeWidth={3}
+            paintOrder="stroke"
+            style={{ fontFamily: 'var(--font-sans)' }}
+          >
+            <tspan fill={colorById.get(l.key)}>●</tspan> {l.name}
+          </text>
+        ))}
+      </g>
+    </ZIndexLayer>
+  )
 }
 
 /**
