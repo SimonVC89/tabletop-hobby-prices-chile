@@ -52,6 +52,9 @@ jobs:
       # Cada tienda es un step independiente con continue-on-error: si una
       # tienda cambia su HTML y su scraper falla, no debe tumbar a las
       # demas ni impedir que corra el matching con lo que si se pudo traer.
+      # Una tienda cerrada al publico (pagina de contrasena de Shopify) termina bien
+      # con una advertencia; una abierta que devuelve 0 productos es una falla
+      # (src/ingest.py).
       #
       # UpDown queda fuera del cron: devuelve 403 Forbidden especificamente
       # desde las IPs de los runners de GitHub (bloqueo a trafico de
