@@ -11,18 +11,18 @@ export const formatCLP = (value: number) => clp.format(value)
 export const formatPct = (value: number) => `${Math.round(value)}%`
 
 // hourCycle h23: es-CL usa 12 horas por defecto ("08:39 p. m.").
-const dateTime = new Intl.DateTimeFormat('es-CL', {
-  day: 'numeric',
-  month: 'long',
-  hour: '2-digit',
-  minute: '2-digit',
-  hourCycle: 'h23',
-})
-
-/** ISO -> "15 de octubre, 22:37" en hora de Chile */
-export const formatDateTime = (iso: string) => dateTime.format(new Date(iso))
-
 const clock = new Intl.DateTimeFormat('es-CL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+const dayMonth = new Intl.DateTimeFormat('es-CL', { day: 'numeric', month: 'long' })
+
+/**
+ * ISO -> "15 de octubre, 22:37" en hora de Chile. Fecha y hora por separado:
+ * juntas, cada version de ICU (navegador o Node) las une distinto
+ * ("15 de octubre, 22:37" o "15 de octubre a las 22:37").
+ */
+export const formatDateTime = (iso: string) => {
+  const date = new Date(iso)
+  return `${dayMonth.format(date)}, ${clock.format(date)}`
+}
 
 /** ISO -> "hoy a las 13:41", "ayer a las 22:15" o "15 de octubre, 22:37" */
 export function formatUpdated(iso: string, now: Date = new Date()) {
