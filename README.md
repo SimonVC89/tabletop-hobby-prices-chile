@@ -32,7 +32,7 @@ Chile puedan revisarlo, usarlo o adaptarlo a su propio stack.
 | Backend | Spring Boot 4 (Java 21), API REST documentada con OpenAPI, desplegado en Render (Docker) |
 | Frontend | React + TypeScript + Vite + Tailwind, desplegado en Vercel |
 | Alertas | Bot de Telegram (comandos por webhook a la API; resumen y avisos desde Python) |
-| CI | GitHub Actions por carpeta: pytest, JUnit y lint + build del frontend |
+| Pruebas y CI | pytest (scraper), JUnit (backend) y Vitest + Testing Library (frontend), en GitHub Actions por carpeta |
 
 Todo corre en capas gratuitas — es un proyecto de uso personal, no un
 servicio comercial.
@@ -156,6 +156,7 @@ juegos grabada desde la API real (`frontend/public/mock-sample/`):
 cd frontend
 npm ci
 npm run dev        # http://localhost:5173
+npm test           # pruebas (Vitest)
 ```
 
 **Todo el proyecto.** Requiere un proyecto de Supabase (Postgres con
@@ -185,7 +186,7 @@ npm run dev:api
 
 - [x] Imagen Docker del backend (con CDS para arrancar rápido en el plan gratuito)
 - [ ] `docker-compose` para levantar todo en local
-- [x] Tests (`pytest` para el scraper/matching, JUnit para el backend)
+- [x] Tests (`pytest` para el scraper/matching, JUnit para el backend, Vitest para el frontend)
 - [ ] Logging estructurado (reemplazar `print()`)
 - [ ] Validación de datos con Pydantic en el scraper
 - [x] Reintentos con backoff exponencial en requests HTTP
@@ -198,7 +199,7 @@ npm run dev:api
 - [x] Webhook de Telegram en el backend, para que el bot responda en segundos
 - [x] Política de retención: poda de `price_history` (8 meses) y soft-delete
       de productos descontinuados (6 meses sin listings activos)
-- [x] CI por carpeta para `scraper/`, `backend/` y `frontend/` en cada push y PR: pytest, JUnit + build del backend, lint + build del frontend
+- [x] CI por carpeta para `scraper/`, `backend/` y `frontend/` en cada push y PR: pytest, JUnit + build del backend, lint + Vitest + build del frontend
 - [x] Backend: API REST con DTOs, paginación y caché del catálogo
 - [x] Documentación OpenAPI/Swagger de la API
 - [x] Frontend con gráficos de precio histórico (Recharts)
